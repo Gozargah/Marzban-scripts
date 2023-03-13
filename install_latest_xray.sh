@@ -90,8 +90,10 @@ extract_xray() {
 
 place_xray() {
     install -m 755 "${TMP_DIRECTORY}/xray" "/usr/local/bin/xray"
+    install -d "/usr/local/share/xray/"
     install -m 644 "${TMP_DIRECTORY}/geoip.dat" "/usr/local/share/xray/geoip.dat"
     install -m 644 "${TMP_DIRECTORY}/geosite.dat" "/usr/local/share/xray/geosite.dat"
+    echo "Xray files installed"
 }
 
 check_if_running_as_root
