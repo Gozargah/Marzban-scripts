@@ -2,7 +2,9 @@
 set -e
 
 INSTALL_DIR="/opt"
-APP_NAME="marzban"
+if [ -z "$APP_NAME" ]; then
+    APP_NAME="marzban"
+fi
 APP_DIR="$INSTALL_DIR/$APP_NAME"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 
