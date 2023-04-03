@@ -61,9 +61,10 @@ detect_and_update_package_manager() {
     if [[ "$OS" == "Ubuntu" ]] || [[ "$OS" == "Debian" ]]; then
         PKG_MANAGER="apt-get"
         $PKG_MANAGER update
-        elif [ "$OS" == "CentOS" ]; then
+        elif [[ "$OS" == "CentOS" ]] || [[ "$OS" == "CentOS Linux" ]]; then
         PKG_MANAGER="yum"
-        $PKG_MANAGER update
+        $PKG_MANAGER update -y
+        $PKG_MANAGER epel-release -y
         elif [ "$OS" == "Fedora" ]; then
         PKG_MANAGER="dnf"
         $PKG_MANAGER update
@@ -97,7 +98,7 @@ install_package () {
     colorized_echo blue "Installing $PACKAGE"
     if [[ "$OS" == "Ubuntu" ]] || [[ "$OS" == "Debian" ]]; then
         $PKG_MANAGER -y install "$PACKAGE"
-        elif [ "$OS" == "CentOS" ]; then
+        elif [[ "$OS" == "CentOS" ]] || [[ "$OS" == "CentOS Linux" ]]; then
         $PKG_MANAGER install -y "$PACKAGE"
         elif [ "$OS" == "Fedora" ]; then
         $PKG_MANAGER install -y "$PACKAGE"
