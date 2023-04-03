@@ -138,7 +138,7 @@ install_marzban() {
     
     # Download and extract selected asset to 'marzban' directory
     DOWNLOAD_URL="https://github.com/$FETCH_REPO/releases/download/$FETCH_TAG/$ASSET.tar.gz"
-    colorized_echo blue "Downloading $DOWNLOAD_URL and extracting to /opt/marzban"
+    colorized_echo blue "Downloading $DOWNLOAD_URL and extracting to $APP_DIR"
     curl -sL $DOWNLOAD_URL | tar xz --xform "s/$ASSET/$APP_NAME/" -C $INSTALL_DIR
     colorized_echo green "Marzban files downloaded and extracted successfully"
 }
@@ -221,9 +221,9 @@ ask_for_tls() {
         ~/.acme.sh/acme.sh --issue --standalone -d $DOMAIN_NAME --force --email $EMAIL --key-file $CERTS_DIR/key.pem --fullchain-file $CERTS_DIR/fullchain.pem
         
         # Update xray config file
-        sed -i 's/\"SERVER_NAME\"/'\""$DOMAIN_NAME"\"'/g' /opt/marzban/xray_config.json
-        sed -i 's|/var/lib/marzban/certs|'"$CERTS_DIR"'|g' /opt/marzban/xray_config.json
-        sed -i 's/\/\/\([^/]\)/\1/g' /opt/marzban/xray_config.json
+        sed -i 's/\"SERVER_NAME\"/'\""$DOMAIN_NAME"\"'/g' $APP_DIR/xray_config.json
+        sed -i 's|/var/lib/marzban/certs|'"$CERTS_DIR"'|g' $APP_DIR/xray_config.json
+        sed -i 's/\/\/\([^/]\)/\1/g' $APP_DIR/xray_config.json
         
         colorized_echo green "TLS is enabled for $DOMAIN_NAME"
     fi
