@@ -259,7 +259,7 @@ install_command() {
 
 up_command() {
     help() {
-        colorized_echo red "Usage: $0 up [options]"
+        colorized_echo red "Usage: marzban.sh up [options]"
         echo ""
         echo "OPTIONS:"
         echo "  -h, --help        display this help message"
@@ -322,7 +322,7 @@ down_command() {
 
 restart_command() {
     help() {
-        colorized_echo red "Usage: $0 restart [options]"
+        colorized_echo red "Usage: marzban.sh restart [options]"
         echo
         echo "OPTIONS:"
         echo "  -h, --help        display this help message"
@@ -399,7 +399,7 @@ status_command() {
 
 logs_command() {
     help() {
-        colorized_echo red "Usage: $0 logs [options]"
+        colorized_echo red "Usage: marzban.sh logs [options]"
         echo ""
         echo "OPTIONS:"
         echo "  -h, --help        display this help message"
@@ -465,7 +465,7 @@ update_command() {
 
 
 usage() {
-    colorized_echo red "Usage: $0 [command]"
+    colorized_echo red "Usage: marzban.sh [command]"
     echo
     echo "Commands:"
     echo "  install    Install Marzban"
