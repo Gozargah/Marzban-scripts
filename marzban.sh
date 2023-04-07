@@ -288,12 +288,13 @@ up_command() {
         shift
     done
     
-    detect_compose
     # Check if marzban is installed
     if ! is_marzban_installed; then
         colorized_echo red "Marzban's not installed!"
         exit 1
     fi
+    
+    detect_compose
     
     if is_marzban_up; then
         colorized_echo red "Marzban's already up"
@@ -307,13 +308,14 @@ up_command() {
 }
 
 down_command() {
-    detect_compose
     
     # Check if marzban is installed
     if ! is_marzban_installed; then
         colorized_echo red "Marzban's not installed!"
         exit 1
     fi
+    
+    detect_compose
     
     if ! is_marzban_up; then
         colorized_echo red "Marzban's already down"
@@ -351,12 +353,13 @@ restart_command() {
         shift
     done
     
-    detect_compose
     # Check if marzban is installed
     if ! is_marzban_installed; then
         colorized_echo red "Marzban's not installed!"
         exit 1
     fi
+    
+    detect_compose
     
     down_marzban
     up_marzban
@@ -366,7 +369,6 @@ restart_command() {
 }
 
 status_command() {
-    detect_compose
     
     # Check if marzban is installed
     if ! is_marzban_installed; then
@@ -374,6 +376,8 @@ status_command() {
         colorized_echo red "Not Installed"
         exit 1
     fi
+    
+    detect_compose
     
     if ! is_marzban_up; then
         echo -n "Status: "
@@ -428,12 +432,13 @@ logs_command() {
         shift
     done
     
-    detect_compose
     # Check if marzban is installed
     if ! is_marzban_installed; then
         colorized_echo red "Marzban's not installed!"
         exit 1
     fi
+    
+    detect_compose
     
     if ! is_marzban_up; then
         colorized_echo red "Marzban is not up."
@@ -448,13 +453,14 @@ logs_command() {
 }
 
 update_command() {
-    detect_compose
     
     # Check if marzban is installed
     if ! is_marzban_installed; then
         colorized_echo red "Marzban's not installed!"
         exit 1
     fi
+    
+    detect_compose
     
     colorized_echo blue "Pulling latest version"
     update_marzban
