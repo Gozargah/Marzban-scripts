@@ -15,17 +15,17 @@ colorized_echo() {
     
     case $color in
         "red")
-        echo -e "\e[91m${text}\e[0m";;
+        printf "\e[91m${text}\e[0m\n";;
         "green")
-        echo -e "\e[92m${text}\e[0m";;
+        printf "\e[92m${text}\e[0m\n";;
         "yellow")
-        echo -e "\e[93m${text}\e[0m";;
+        printf "\e[93m${text}\e[0m\n";;
         "blue")
-        echo -e "\e[94m${text}\e[0m";;
+        printf "\e[94m${text}\e[0m\n";;
         "magenta")
-        echo -e "\e[95m${text}\e[0m";;
+        printf "\e[95m${text}\e[0m\n";;
         "cyan")
-        echo -e "\e[96m${text}\e[0m";;
+        printf "\e[96m${text}\e[0m\n";;
         *)
             echo "${text}"
         ;;
