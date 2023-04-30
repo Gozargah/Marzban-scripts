@@ -2,6 +2,12 @@
 
 # Download Xray latest
 
+RELEASE_TAG="latest"
+
+if [[ "$1" ]]; then
+    RELEASE_TAG="$1"
+fi
+
 check_if_running_as_root() {
     # If you want to run as another user, please modify $EUID to be owned by this user
     if [[ "$EUID" -ne '0' ]]; then
@@ -70,7 +76,12 @@ identify_the_operating_system_and_architecture() {
 }
 
 download_xray() {
-    DOWNLOAD_LINK="https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-$ARCH.zip"
+    if [[ "$RELEASE_TAG" == "latest" ]]; then
+        DOWNLOAD_LINK="https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-$ARCH.zip"
+    else
+        DOWNLOAD_LINK="https://github.com/XTLS/Xray-core/releases/download/$RELEASE_TAG/Xray-linux-$ARCH.zip"
+    fi
+    
     echo "Downloading Xray archive: $DOWNLOAD_LINK"
     if ! curl -RL -H 'Cache-Control: no-cache' -o "$ZIP_FILE" "$DOWNLOAD_LINK"; then
         echo 'error: Download failed! Please check your network or try again.'
