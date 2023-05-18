@@ -487,21 +487,73 @@ usage() {
     echo
 }
 
+warp_command() {
+    sudo apt install wireguard-dkms wireguard-tools resolvconf
+
+    if ! command -v go &> /dev/null; then
+        sudo apt install golang
+    fi
+
+    DIR="Warp_Generator"
+
+    mkdir -p $DIR
+
+    cd $DIR
+
+    git clone https://github.com/ViRb3/wgcf.git
+
+    cd wgcf
+
+    RELEASE_TAG=$(curl --silent "https://api.github.com/repos/ViRb3/wgcf/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
+
+    ASSET_NAME="wgcf_${RELEASE_TAG}_linux_386"
+
+    curl -LJO "https://github.com/ViRb3/wgcf/releases/download/${RELEASE_TAG}/${ASSET_NAME}"
+
+    mv $ASSET_NAME wgcf
+
+    chmod +x wgcf
+
+    ./wgcf register
+
+    ./wgcf generate
+
+    read -p "Do you have a Warp license key (y/n)? " HAS_LICENSE_KEY
+
+    if [ "$HAS_LICENSE_KEY" == "y" ]; then
+        read -p "Enter your Warp license key: " LICENSE_KEY
+        sed -i "s/license_key = .*/license_key = '$LICENSE_KEY'/" wgcf-account.toml
+
+    ./wgcf update
+
+    ./wgcf generate
+
+    fi
+
+    sudo cp wgcf-profile.conf /etc/wireguard/warp.conf
+
+    sudo sed -i '/\[Interface\]/a Table = off' /etc/wireguard/warp.conf
+
+    sudo systemctl enable --now wg-quick@warp
+}
+
 case "$1" in
-    install)
-    shift; install_command "$@";;
-    up)
-    shift; up_command "$@";;
-    down)
-    shift; down_command "$@";;
-    restart)
-    shift; restart_command "$@";;
-    status)
-    shift; status_command "$@";;
-    logs)
-    shift; logs_command "$@";;
-    update)
-    shift; update_command "$@";;
-    *)
-    usage;;
+ install)
+ shift; install_command "$@";;
+ up)
+ shift; up_command "$@";;
+ down)
+ shift; down_command "$@";;
+ restart)
+ shift; restart_command "$@";;
+ status)
+ shift; status_command "$@";;
+ logs)
+ shift; logs_command "$@";;
+ update)
+ shift; update_command "$@";;
+ warp)
+ shift; warp_command "$@";;
+ *)
+ usage;;
 esac
