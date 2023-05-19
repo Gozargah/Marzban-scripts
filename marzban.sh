@@ -484,22 +484,23 @@ usage() {
     echo "  status     Show status"
     echo "  logs       Show logs"
     echo "  update     Update latest version"
+    echo "  warp       Install and run warp"
     echo
 }
 
 warp_command() {
-    sudo apt install wireguard-dkms wireguard-tools resolvconf
-
-    if ! command -v go &> /dev/null; then
-        sudo apt install golang
-    fi
-
-    DIR="Warp_Generator"
-
-    mkdir -p $DIR
-
-    cd $DIR
-
+    echo  "Welcome To Marzban Warp Installer"
+    echo  "This script with wgcf program made by ViRb3"
+    echo  "https://github.com/ViRb3/wgcf"
+    echo  "Installing wireguard tools"
+    install_package wireguard-dkms
+    install_package wireguard-tools
+    install_package resolvconf
+    
+    echo  "Changing Directory To opt"
+    cd /opt
+    
+    echo  "Downloading wgcf ......"
     git clone https://github.com/ViRb3/wgcf.git
 
     cd wgcf
@@ -511,30 +512,37 @@ warp_command() {
     curl -LJO "https://github.com/ViRb3/wgcf/releases/download/${RELEASE_TAG}/${ASSET_NAME}"
 
     mv $ASSET_NAME wgcf
-
     chmod +x wgcf
-
+    
+    echo  "Performing initial setup"
     ./wgcf register
-
     ./wgcf generate
-
-    read -p "Do you have a Warp license key (y/n)? " HAS_LICENSE_KEY
+    
+    echo "Do you have a Warp+ license key (y/n)? "
+    echo "You Can Get Free One From @generatewarpplusbot Bot In Telegram "
+    read  HAS_LICENSE_KEY
 
     if [ "$HAS_LICENSE_KEY" == "y" ]; then
-        read -p "Enter your Warp license key: " LICENSE_KEY
+        read -p "Enter your Warp+ license key: " LICENSE_KEY
         sed -i "s/license_key = .*/license_key = '$LICENSE_KEY'/" wgcf-account.toml
-
     ./wgcf update
-
     ./wgcf generate
-
+    echo  "Config Generated"
     fi
 
     sudo cp wgcf-profile.conf /etc/wireguard/warp.conf
-
+    echo  "Config Moved To /etc/wireguard/"
+    
     sudo sed -i '/\[Interface\]/a Table = off' /etc/wireguard/warp.conf
-
+    
+    read -p "Do you wanna start Warp (y/n)?" WARP_STATUS
+    if [ "$WARP_STATUS" == "y" ]; then
     sudo systemctl enable --now wg-quick@warp
+    echo  "Warp is Working , you can disable it with ( sudo systemctl disable --now wg-quick@warp ) command"
+    fi
+        echo  "Warp is off , you can enable it with ( sudo systemctl enable --now wg-quick@warp ) command later"
+    
+    echo  "One more step , you need to change xray.json (or xray_config.json) manually"
 }
 
 case "$1" in
