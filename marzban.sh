@@ -484,24 +484,84 @@ usage() {
     echo "  status     Show status"
     echo "  logs       Show logs"
     echo "  update     Update latest version"
+    echo "  warp       Install and run warp"
     echo
 }
 
+warp_command() {
+    echo  "Welcome To Marzban Warp Installer"
+    echo  "This script use wgcf program made by ViRb3"
+    echo  "https://github.com/ViRb3/wgcf"
+    echo  "Installing wireguard tools"
+    install_package wireguard-dkms
+    install_package wireguard-tools
+    install_package resolvconf
+    
+    echo  "Changing Directory To opt"
+    cd /opt
+    
+    echo  "Downloading wgcf ......"
+    git clone https://github.com/ViRb3/wgcf.git
+
+    cd wgcf
+
+    RELEASE_TAG=$(curl --silent "https://api.github.com/repos/ViRb3/wgcf/releases/latest" | grep -Po '"tag_name": "\K.*?(?=")')
+
+    ASSET_NAME="wgcf_${RELEASE_TAG}_linux_386"
+
+    curl -LJO "https://github.com/ViRb3/wgcf/releases/download/${RELEASE_TAG}/${ASSET_NAME}"
+
+    mv $ASSET_NAME wgcf
+    chmod +x wgcf
+    
+    echo  "Performing initial setup"
+    ./wgcf register
+    ./wgcf generate
+    
+    echo "Do you have a Warp+ license key (y/n)? "
+    echo "You Can Get Free One From @generatewarpplusbot Bot In Telegram "
+    read  HAS_LICENSE_KEY
+
+    if [ "$HAS_LICENSE_KEY" == "y" ]; then
+        read -p "Enter your Warp+ license key: " LICENSE_KEY
+        sed -i "s/license_key = .*/license_key = '$LICENSE_KEY'/" wgcf-account.toml
+    ./wgcf update
+    ./wgcf generate
+    echo  "Config Generated"
+    fi
+
+    sudo cp wgcf-profile.conf /etc/wireguard/warp.conf
+    echo  "Config Moved To /etc/wireguard/"
+    
+    sudo sed -i '/\[Interface\]/a Table = off' /etc/wireguard/warp.conf
+    
+    read -p "Do you wanna start Warp (y/n)?" WARP_STATUS
+    if [ "$WARP_STATUS" == "y" ]; then
+    sudo systemctl enable --now wg-quick@warp
+    echo  "Warp is Working , you can disable it with ( sudo systemctl disable --now wg-quick@warp ) command"
+    fi
+        echo  "Warp is off , you can enable it with ( sudo systemctl enable --now wg-quick@warp ) command later"
+    
+    echo  "One more step , you need to change xray.json (or xray_config.json) manually"
+}
+
 case "$1" in
-    install)
-    shift; install_command "$@";;
-    up)
-    shift; up_command "$@";;
-    down)
-    shift; down_command "$@";;
-    restart)
-    shift; restart_command "$@";;
-    status)
-    shift; status_command "$@";;
-    logs)
-    shift; logs_command "$@";;
-    update)
-    shift; update_command "$@";;
-    *)
-    usage;;
+ install)
+ shift; install_command "$@";;
+ up)
+ shift; up_command "$@";;
+ down)
+ shift; down_command "$@";;
+ restart)
+ shift; restart_command "$@";;
+ status)
+ shift; status_command "$@";;
+ logs)
+ shift; logs_command "$@";;
+ update)
+ shift; update_command "$@";;
+ warp)
+ shift; warp_command "$@";;
+ *)
+ usage;;
 esac
