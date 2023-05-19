@@ -490,7 +490,7 @@ usage() {
 
 warp_command() {
     echo  "Welcome To Marzban Warp Installer"
-    echo  "This script with wgcf program made by ViRb3"
+    echo  "This script use wgcf program made by ViRb3"
     echo  "https://github.com/ViRb3/wgcf"
     echo  "Installing wireguard tools"
     install_package wireguard-dkms
