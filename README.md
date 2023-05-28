@@ -1,8 +1,8 @@
 # Marzban-scripts
-Some scripts for Marzban
+Scripts for Marzban
 
-## Marzban.sh
-Install `marzban.sh` on your machine
+## Installer
+Install Marzban using this script
 ```bash
-curl -L https://github.com/Gozargah/Marzban-scripts/raw/master/get-marzban.sh | sudo bash
+sudo bash -c "$(curl -L https://github.com/Gozargah/Marzban-scripts/raw/master/marzban.sh)" @ install
 ```
