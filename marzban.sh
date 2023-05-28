@@ -133,7 +133,7 @@ install_marzban() {
     
     colorized_echo blue "Fetching compose file"
     curl -sL "$FILES_URL_PREFIX/docker-compose.yml" -o "$APP_DIR/docker-compose.yml"
-    colorized_echo gren "File saved in $APP_DIR/docker-compose.yml"
+    colorized_echo green "File saved in $APP_DIR/docker-compose.yml"
     
     colorized_echo blue "Fetching .env file"
     curl -sL "$FILES_URL_PREFIX/.env.example" -o "$APP_DIR/.env"
@@ -141,11 +141,11 @@ install_marzban() {
     sed -i 's/^# \(SQLALCHEMY_DATABASE_URL = .*\)$/\1/' "$APP_DIR/.env"
     sed -i 's~\(XRAY_JSON = \).*~\1"/var/lib/marzban/xray_config.json"~' "$APP_DIR/.env"
     sed -i 's~\(SQLALCHEMY_DATABASE_URL = \).*~\1"sqlite:////var/lib/marzban/db.sqlite3"~' "$APP_DIR/.env"
-    colorized_echo gren "File saved in $APP_DIR/.env"
+    colorized_echo green "File saved in $APP_DIR/.env"
     
     colorized_echo blue "Fetching xray config file"
     curl -sL "$FILES_URL_PREFIX/xray_config.json" -o "$DATA_DIR/xray_config.json"
-    colorized_echo gren "File saved in $DATA_DIR/xray_config.json"
+    colorized_echo green "File saved in $DATA_DIR/xray_config.json"
     
     colorized_echo green "Marzban's files downloaded successfully"
 }
