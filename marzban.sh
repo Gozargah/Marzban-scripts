@@ -130,6 +130,7 @@ install_marzban() {
     FILES_URL_PREFIX="https://raw.githubusercontent.com/Gozargah/Marzban/master"
     
     mkdir -p "$DATA_DIR"
+    mkdir -p "$APP_DIR"
     
     colorized_echo blue "Fetching compose file"
     curl -sL "$FILES_URL_PREFIX/docker-compose.yml" -o "$APP_DIR/docker-compose.yml"
