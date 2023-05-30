@@ -127,9 +127,9 @@ install_marzban_script() {
 
 install_marzban() {
     # Fetch releases
-    FILES_URL_PREFIX="https://raw.githubusercontent.com/Gozargah/Marzban/latest"
+    FILES_URL_PREFIX="https://raw.githubusercontent.com/Gozargah/Marzban/master"
     
-    mkdir -p "$APP_DIR"
+    mkdir -p "$DATA_DIR"
     
     colorized_echo blue "Fetching compose file"
     curl -sL "$FILES_URL_PREFIX/docker-compose.yml" -o "$APP_DIR/docker-compose.yml"
