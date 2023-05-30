@@ -205,6 +205,15 @@ marzban_cli() {
     $COMPOSE -f $COMPOSE_FILE -p "$APP_NAME" exec -e CLI_PROG_NAME="marzban cli" marzban marzban-cli "$@"
 }
 
+
+update_marzban_script() {
+    FETCH_REPO="Gozargah/Marzban-scripts"
+    SCRIPT_URL="https://github.com/$FETCH_REPO/raw/master/marzban.sh"
+    colorized_echo blue "Updating marzban script"
+    curl -sSL $SCRIPT_URL | install -m 755 /dev/stdin /usr/local/bin/marzban
+    colorized_echo green "marzban script updated successfully"
+}
+
 update_marzban() {
     $COMPOSE -f $COMPOSE_FILE -p "$APP_NAME" pull
 }
@@ -491,7 +500,7 @@ cli_command() {
 }
 
 update_command() {
-    
+    check_running_as_root
     # Check if marzban is installed
     if ! is_marzban_installed; then
         colorized_echo red "Marzban's not installed!"
@@ -500,6 +509,7 @@ update_command() {
     
     detect_compose
     
+    update_marzban_script
     colorized_echo blue "Pulling latest version"
     update_marzban
     
