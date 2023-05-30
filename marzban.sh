@@ -201,6 +201,10 @@ follow_marzban_logs() {
     $COMPOSE -f $COMPOSE_FILE -p "$APP_NAME" logs -f
 }
 
+marzban_cli() {
+    $COMPOSE -f $COMPOSE_FILE -p "$APP_NAME" exec -e CLI_PROG_NAME="marzban cli" marzban marzban-cli "$@"
+}
+
 update_marzban() {
     $COMPOSE -f $COMPOSE_FILE -p "$APP_NAME" pull
 }
@@ -469,6 +473,23 @@ logs_command() {
     fi
 }
 
+cli_command() {
+    # Check if marzban is installed
+    if ! is_marzban_installed; then
+        colorized_echo red "Marzban's not installed!"
+        exit 1
+    fi
+    
+    detect_compose
+    
+    if ! is_marzban_up; then
+        colorized_echo red "Marzban is not up."
+        exit 1
+    fi
+    
+    marzban_cli "$@"
+}
+
 update_command() {
     
     # Check if marzban is installed
@@ -499,6 +520,7 @@ usage() {
     echo "  restart     Restart services"
     echo "  status      Show status"
     echo "  logs        Show logs"
+    echo "  cli         Marzban CLI"
     echo "  install     Install Marzban"
     echo "  update      Update latest version"
     echo "  uninstall   Uninstall Marzban"
@@ -516,6 +538,8 @@ case "$1" in
     shift; status_command "$@";;
     logs)
     shift; logs_command "$@";;
+    cli)
+    shift; cli_command "$@";;
     install)
     shift; install_command "$@";;
     update)
