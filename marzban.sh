@@ -246,6 +246,9 @@ install_command() {
         fi
     fi
     detect_os
+    if ! command -v jq >/dev/null 2>&1; then
+        install_package jq
+    fi
     if ! command -v curl >/dev/null 2>&1; then
         install_package curl
     fi
