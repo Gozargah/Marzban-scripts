@@ -160,9 +160,9 @@ uninstall_marzban_script() {
 }
 
 uninstall_marzban() {
-    if [ -d "$INSTALL_DIR" ]; then
-        colorized_echo yellow "Removing directory: $INSTALL_DIR"
-        rm -r "$INSTALL_DIR"
+    if [ -d "$APP_DIR" ]; then
+        colorized_echo yellow "Removing directory: $APP_DIR"
+        rm -r "$APP_DIR"
     fi
 }
 
