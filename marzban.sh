@@ -423,8 +423,8 @@ status_command() {
     colorized_echo green "Up"
     
     json=$($COMPOSE -f $COMPOSE_FILE ps -a --format=json)
-    services=$(echo $json | jq -r '.[] | .Service')
-    states=$(echo $json | jq -r '.[] | .State')
+    services=$(echo "$json" | jq -r 'if type == "array" then .[] else . end | .Service')
+    states=$(echo "$json" | jq -r 'if type == "array" then .[] else . end | .State')
     # Print out the service names and statuses
     for i in $(seq 0 $(expr $(echo $services | wc -w) - 1)); do
         service=$(echo $services | cut -d' ' -f $(expr $i + 1))
