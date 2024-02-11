@@ -529,15 +529,16 @@ usage() {
     colorized_echo red "Usage: marzban [command]"
     echo
     echo "Commands:"
-    echo "  up          Start services"
-    echo "  down        Stop services"
-    echo "  restart     Restart services"
-    echo "  status      Show status"
-    echo "  logs        Show logs"
-    echo "  cli         Marzban CLI"
-    echo "  install     Install Marzban"
-    echo "  update      Update latest version"
-    echo "  uninstall   Uninstall Marzban"
+    echo "  up              Start services"
+    echo "  down            Stop services"
+    echo "  restart         Restart services"
+    echo "  status          Show status"
+    echo "  logs            Show logs"
+    echo "  cli             Marzban CLI"
+    echo "  install         Install Marzban"
+    echo "  update          Update latest version"
+    echo "  uninstall       Uninstall Marzban"
+    echo "  install-script  Install Marzban script"
     echo
 }
 
@@ -560,6 +561,8 @@ case "$1" in
     shift; update_command "$@";;
     uninstall)
     shift; uninstall_command "$@";;
+    install-script)
+    shift; install_marzban_script "$@";;
     *)
     usage;;
 esac
