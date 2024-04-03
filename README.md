@@ -14,5 +14,5 @@ sudo bash -c "$(curl -sL https://github.com/Gozargah/Marzban-scripts/raw/master/
 
 You can also install marzban node using this command
 ```bash
-sudo bash <(curl -Ls https://github.com/Gozargah/Marzban-scripts/raw/master/marzban-node.sh)
+bash <(curl -Ls https://github.com/Gozargah/Marzban-scripts/raw/master/marzban-node.sh)
 ``` 
