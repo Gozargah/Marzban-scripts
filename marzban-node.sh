@@ -49,30 +49,30 @@ wget -O $HOME/$panel/.env https://raw.githubusercontent.com/Gozargah/Marzban-nod
 
 
 
-#choosing core version
-sudo mkdir -p $HOME/$panel/xray-core
-echo "which version of xray core do you want? (leave blank for latest)"
-read -r core
-core=${core:-latest}
+#choosing core version - haulted because of an issue - will be uncommented after fix
+# sudo mkdir -p $HOME/$panel/xray-core
+# echo "which version of xray core do you want? (leave blank for latest)"
+# read -r core
+# core=${core:-latest}
 
-cd "$HOME/$panel/xray-core"
+# cd "$HOME/$panel/xray-core"
 
-if [ "$core" == "latest" ]; then
-    wget -O Xray-linux-64.zip $(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | grep browser_download_url | grep 'Xray-linux-64.zip' | cut -d '"' -f 4)
-else
-    wget -O Xray-linux-64.zip "https://github.com/XTLS/Xray-core/releases/download/v$core/Xray-linux-64.zip" || { 
-        echo "Failed to download Xray-core. Are you sure this is the correct version? Check for typos."; 
-        exit 1;
-    }
-fi
-if unzip Xray-linux-64.zip; then
-    rm Xray-linux-64.zip
-    rm geosite.dat
-    rm geoip.dat
-else
-    echo "Failed to unzip Xray-linux-64.zip."
-    exit 1;  
-fi
+# if [ "$core" == "latest" ]; then
+#     wget -O Xray-linux-64.zip $(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | grep browser_download_url | grep 'Xray-linux-64.zip' | cut -d '"' -f 4)
+# else
+#     wget -O Xray-linux-64.zip "https://github.com/XTLS/Xray-core/releases/download/v$core/Xray-linux-64.zip" || { 
+#         echo "Failed to download Xray-core. Are you sure this is the correct version? Check for typos."; 
+#         exit 1;
+#     }
+# fi
+# if unzip Xray-linux-64.zip; then
+#     rm Xray-linux-64.zip
+#     rm geosite.dat
+#     rm geoip.dat
+# else
+#     echo "Failed to unzip Xray-linux-64.zip."
+#     exit 1;  
+# fi
 
 
 echo "Success! Now get ready for setup."
@@ -105,7 +105,8 @@ ENV="$HOME/$panel/.env"
 #setting up env
 sed -i "s|^SERVICE_PORT = .*|SERVICE_PORT = $service|" "$ENV"
 sed -i "s|^XRAY_API_PORT = .*|XRAY_API_PORT = $api|" "$ENV"
-sed -i "s|^# XRAY_EXECUTABLE_PATH = .*|XRAY_EXECUTABLE_PATH = $HOME/$panel/xray-core/xray|" "$ENV"
+# Commented because of an issue with node environment
+# sed -i "s|^# XRAY_EXECUTABLE_PATH = .*|XRAY_EXECUTABLE_PATH = $HOME/$panel/xray-core/xray|" "$ENV"
 sed -i "s|^SSL_CERT_FILE = .*|# SSL_CERT_FILE = /var/lib/marzban-node/ssl_cert.pem|" "$ENV"
 sed -i "s|^SSL_KEY_FILE = .*|# SSL_KEY_FILE = /var/lib/marzban-node/ssl_key.pem|" "$ENV"
 sed -i "s|^SSL_CLIENT_CERT_FILE = .*|SSL_CLIENT_CERT_FILE = /var/lib/marzban-node/$panel.pem|" "$ENV"
