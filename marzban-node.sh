@@ -106,7 +106,7 @@ sed -i "s|^XRAY_API_PORT = .*|XRAY_API_PORT = $api|" "$ENV"
 sed -i "s|^# XRAY_EXECUTABLE_PATH = .*|XRAY_EXECUTABLE_PATH = $HOME/$panel/xray-core/xray|" "$ENV"
 sed -i "s|^SSL_CERT_FILE = .*|# SSL_CERT_FILE = /var/lib/marzban-node/ssl_cert.pem|" "$ENV"
 sed -i "s|^SSL_KEY_FILE = .*|# SSL_KEY_FILE = /var/lib/marzban-node/ssl_key.pem|" "$ENV"
-sed -i "s|^SSL_CLIENT_CERT_FILE = .*| SSL_CLIENT_CERT_FILE = /var/lib/marzban-node/$panel.pem|" "$ENV"
+sed -i "s|^SSL_CLIENT_CERT_FILE = .*|SSL_CLIENT_CERT_FILE = /var/lib/marzban-node/$panel.pem|" "$ENV"
 sed -i "s|^# SERVICE_PROTOCOL = rpyc|SERVICE_PROTOCOL = rest|" "$ENV"
 
 echo ".env is ready! Almost done."
