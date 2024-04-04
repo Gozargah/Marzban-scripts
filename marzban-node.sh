@@ -25,6 +25,7 @@ echo "panel set to: $panel"
 echo "Removing existing directories and files..."
 rm -rf "$HOME/$panel" &> /dev/null
 sudo rm -rf /var/lib/marzban-node/$panel.pem &> /dev/null
+sudo rm -rf /var/lib/marzban-node/$panel-core &> /dev/null
 
 echo "Installing necessary packages..."
 sudo apt-get update && sudo apt-get upgrade -y
@@ -50,12 +51,12 @@ wget -O $HOME/$panel/.env https://raw.githubusercontent.com/Gozargah/Marzban-nod
 
 
 #choosing core version
-sudo mkdir -p /var/lib/marzban-node/$panel-core
+
 echo "which version of xray core do you want? (leave blank for latest)"
 read -r core
 core=${core:-latest}
 
-cd "/var/lib/marzban-node/$panel-core"
+cd "/var/lib/marzban-node/"
 
 if [ "$core" == "latest" ]; then
     wget -O Xray-linux-64.zip $(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | grep browser_download_url | grep 'Xray-linux-64.zip' | cut -d '"' -f 4)
@@ -69,6 +70,9 @@ if unzip Xray-linux-64.zip; then
     rm Xray-linux-64.zip
     rm geosite.dat
     rm geoip.dat
+    rm LICENSE
+    rm README.md
+    mv xray "$panel-core"
 else
     echo "Failed to unzip Xray-linux-64.zip."
     exit 1;  
@@ -106,7 +110,7 @@ ENV="$HOME/$panel/.env"
 sed -i "s|^SERVICE_PORT = .*|SERVICE_PORT = $service|" "$ENV"
 sed -i "s|^XRAY_API_PORT = .*|XRAY_API_PORT = $api|" "$ENV"
 # Commented because of an issue with node environment
-sed -i "s|^# XRAY_EXECUTABLE_PATH = .*|XRAY_EXECUTABLE_PATH = /var/lib/marzban-node/$panel-core/xray|" "$ENV"
+sed -i "s|^# XRAY_EXECUTABLE_PATH = .*|XRAY_EXECUTABLE_PATH = /var/lib/marzban-node/$panel-core|" "$ENV"
 sed -i "s|^SSL_CERT_FILE = .*|# SSL_CERT_FILE = /var/lib/marzban-node/ssl_cert.pem|" "$ENV"
 sed -i "s|^SSL_KEY_FILE = .*|# SSL_KEY_FILE = /var/lib/marzban-node/ssl_key.pem|" "$ENV"
 sed -i "s|^SSL_CLIENT_CERT_FILE = .*|SSL_CLIENT_CERT_FILE = /var/lib/marzban-node/$panel.pem|" "$ENV"
