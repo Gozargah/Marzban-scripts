@@ -63,6 +63,8 @@ else
 fi
 if unzip Xray-linux-64.zip; then
     rm Xray-linux-64.zip
+    rm geosite.dat
+    rm geoip.dat
 else
     echo "Failed to unzip Xray-linux-64.zip."
     exit 1;  
