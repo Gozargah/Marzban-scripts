@@ -50,12 +50,12 @@ wget -O $HOME/$panel/.env https://raw.githubusercontent.com/Gozargah/Marzban-nod
 
 
 #choosing core version
-sudo mkdir -p var/lib/marzban-node/$panel-core
+sudo mkdir -p /var/lib/marzban-node/$panel-core
 echo "which version of xray core do you want? (leave blank for latest)"
 read -r core
 core=${core:-latest}
 
-cd "var/lib/marzban-node/$panel-core"
+cd "/var/lib/marzban-node/$panel-core"
 
 if [ "$core" == "latest" ]; then
     wget -O Xray-linux-64.zip $(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | grep browser_download_url | grep 'Xray-linux-64.zip' | cut -d '"' -f 4)
