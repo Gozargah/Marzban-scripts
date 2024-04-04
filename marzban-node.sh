@@ -18,8 +18,10 @@ case "$consent" in
         ;;
 esac
 
-echo "Set a nickname for you panel:"
+echo "Set a nickname for your panel (leave blank for a random nickname - not recomended):"
 read -r panel
+panel=${panel:-node$(openssl rand -hex 1)}
+echo "panel set to: $panel"
 echo "Removing existing directories and files..."
 rm -rf "$HOME/$panel" &> /dev/null
 sudo rm -rf /var/lib/marzban-node/$panel.pem &> /dev/null
