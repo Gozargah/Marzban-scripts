@@ -38,10 +38,12 @@ then
 fi
 clear
 
-echo "Cloning Marzban node..."
-git clone https://github.com/Gozargah/Marzban-node "$HOME/$panel"
+echo "Fetching node files..."
+sudo mkdir -p $HOME/$panel
 sudo mkdir -p /var/lib/marzban-node
-cp "$HOME/$panel/.env.example" "$HOME/$panel/.env"
+wget -O $HOME/$panel/docker-compose.yml  https://raw.githubusercontent.com/Gozargah/Marzban-node/master/docker-compose.yml
+wget -O $HOME/$panel/.env https://raw.githubusercontent.com/Gozargah/Marzban-node/master/.env.example
+
 
 
 
