@@ -25,6 +25,7 @@ echo "panel set to: $panel"
 echo "Removing existing directories and files..."
 rm -rf "$HOME/$panel" &> /dev/null
 sudo rm -rf /var/lib/marzban-node/$panel.pem &> /dev/null
+sudo rm -rf /var/lib/marzban-node/$panel-core &> /dev/null
 
 echo "Installing necessary packages..."
 sudo apt-get update && sudo apt-get upgrade -y
@@ -49,30 +50,56 @@ wget -O $HOME/$panel/.env https://raw.githubusercontent.com/Gozargah/Marzban-nod
 
 
 
-#choosing core version - haulted because of an issue - will be uncommented after fix
-# sudo mkdir -p $HOME/$panel/xray-core
-# echo "which version of xray core do you want? (leave blank for latest)"
-# read -r core
-# core=${core:-latest}
 
-# cd "$HOME/$panel/xray-core"
+echo "Which version of Xray-core do you want?(exmp: 1.8.8)(leave blank for latest)"
+read -r core
+core=${core:-latest}
 
-# if [ "$core" == "latest" ]; then
-#     wget -O Xray-linux-64.zip $(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | grep browser_download_url | grep 'Xray-linux-64.zip' | cut -d '"' -f 4)
-# else
-#     wget -O Xray-linux-64.zip "https://github.com/XTLS/Xray-core/releases/download/v$core/Xray-linux-64.zip" || { 
-#         echo "Failed to download Xray-core. Are you sure this is the correct version? Check for typos."; 
-#         exit 1;
-#     }
-# fi
-# if unzip Xray-linux-64.zip; then
-#     rm Xray-linux-64.zip
-#     rm geosite.dat
-#     rm geoip.dat
-# else
-#     echo "Failed to unzip Xray-linux-64.zip."
-#     exit 1;  
-# fi
+cpu=$(uname -m)
+
+# Function to download XRay based on CPU architecture
+downloadcore() {
+    local arch=$1
+    local version=$2
+    local base_url="https://github.com/XTLS/Xray-core/releases"
+
+    if [[ $arch == "x86_64" ]]; then
+        echo "Detected x86 64 architecture (Intel/AMD). Downloading Xray x64 version..."
+        if [[ $version == "latest" ]]; then
+            wget -O xray.zip $(curl -s "$base_url/latest" | grep browser_download_url | grep 'Xray-linux-64.zip' | cut -d '"' -f 4)
+        else
+            wget -O xray.zip "$base_url/download/v$version/Xray-linux-64.zip" || { 
+                echo "Failed to download Xray-core. Are you sure this is the correct version? Check for typos."; 
+                exit 1;
+            }
+        fi
+    elif [[ $arch == "aarch64" ]]; then
+        echo "Detected ARM architecture. Downloading XRay ARM version..."
+        if [[ $version == "latest" ]]; then
+            wget -O xray.zip $(curl -s "$base_url/latest" | grep browser_download_url | grep 'Xray-linux-arm64.zip' | cut -d '"' -f 4)
+        else
+            wget -O xray.zip "$base_url/download/v$version/Xray-linux-arm64.zip" || { 
+                echo "Failed to download Xray-core. Are you sure this is the correct version? Check for typos."; 
+                exit 1;
+            }
+        fi
+    else
+        echo "Unsupported architecture: $arch"
+        exit 1
+    fi
+}
+
+cd "/var/lib/marzban-node/"
+downloadcore "$cpu" "$core"
+
+if unzip xray.zip; then
+    rm xray.zip
+    rm -v geosite.dat geoip.dat LICENSE README.md
+    mv -v xray "$panel-core"
+else
+    echo "Failed to unzip xray.zip."
+    exit 1;  
+fi
 
 
 echo "Success! Now get ready for setup."
@@ -106,7 +133,7 @@ ENV="$HOME/$panel/.env"
 sed -i "s|^SERVICE_PORT = .*|SERVICE_PORT = $service|" "$ENV"
 sed -i "s|^XRAY_API_PORT = .*|XRAY_API_PORT = $api|" "$ENV"
 # Commented because of an issue with node environment
-# sed -i "s|^# XRAY_EXECUTABLE_PATH = .*|XRAY_EXECUTABLE_PATH = $HOME/$panel/xray-core/xray|" "$ENV"
+sed -i "s|^# XRAY_EXECUTABLE_PATH = .*|XRAY_EXECUTABLE_PATH = /var/lib/marzban-node/$panel-core|" "$ENV"
 sed -i "s|^SSL_CERT_FILE = .*|# SSL_CERT_FILE = /var/lib/marzban-node/ssl_cert.pem|" "$ENV"
 sed -i "s|^SSL_KEY_FILE = .*|# SSL_KEY_FILE = /var/lib/marzban-node/ssl_key.pem|" "$ENV"
 sed -i "s|^SSL_CLIENT_CERT_FILE = .*|SSL_CLIENT_CERT_FILE = /var/lib/marzban-node/$panel.pem|" "$ENV"
