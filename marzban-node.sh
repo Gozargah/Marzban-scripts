@@ -50,85 +50,30 @@ wget -O $HOME/$panel/.env https://raw.githubusercontent.com/Gozargah/Marzban-nod
 
 
 
+#choosing core version - haulted because of an issue - will be uncommented after fix
+# sudo mkdir -p $HOME/$panel/xray-core
+# echo "which version of xray core do you want? (leave blank for latest)"
+# read -r core
+# core=${core:-latest}
 
-echo "Which version of Xray-core do you want?(exmp: 1.8.8)(leave blank for latest)"
-read -r version
-version=${version:-latest}
+# cd "$HOME/$panel/xray-core"
 
-# Function to download XRay based on CPU architecture
-architecture() {
-  local arch
-  case "$(uname -m)" in
-    'i386' | 'i686')
-      arch='32'
-      ;;
-    'amd64' | 'x86_64')
-      arch='64'
-      ;;
-    'armv5tel')
-      arch='arm32-v5'
-      ;;
-    'armv6l')
-      arch='arm32-v6'
-      grep Features /proc/cpuinfo | grep -qw 'vfp' || arch='arm32-v5'
-      ;;
-    'armv7' | 'armv7l')
-      arch='arm32-v7a'
-      grep Features /proc/cpuinfo | grep -qw 'vfp' || arch='arm32-v5'
-      ;;
-    'armv8' | 'aarch64')
-      arch='arm64-v8a'
-      ;;
-    'mips')
-      arch='mips32'
-      ;;
-    'mipsle')
-      arch='mips32le'
-      ;;
-    'mips64')
-      arch='mips64'
-      lscpu | grep -q "Little Endian" && arch='mips64le'
-      ;;
-    'mips64le')
-      arch='mips64le'
-      ;;
-    'ppc64')
-      arch='ppc64'
-      ;;
-    'ppc64le')
-      arch='ppc64le'
-      ;;
-    'riscv64')
-      arch='riscv64'
-      ;;
-    's390x')
-      arch='s390x'
-      ;;
-    *)
-      echo "error: The architecture is not supported."
-      return 1
-      ;;
-  esac
-  echo "$arch"
-}
-arch=$(architecture)
-cd "/var/lib/marzban-node/"
-if [[ $version == "latest" ]]; then
-    wget -O xray.zip "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-$arch.zip"
-else
-    wget -O xray.zip "https://github.com/XTLS/Xray-core/releases/download/v$version/Xray-linux-$arch.zip"
-fi
-
-
-
-if unzip xray.zip; then
-    rm xray.zip
-    rm -v geosite.dat geoip.dat LICENSE README.md
-    mv -v xray "$panel-core"
-else
-    echo "Failed to unzip xray.zip."
-    exit 1;  
-fi
+# if [ "$core" == "latest" ]; then
+#     wget -O Xray-linux-64.zip $(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | grep browser_download_url | grep 'Xray-linux-64.zip' | cut -d '"' -f 4)
+# else
+#     wget -O Xray-linux-64.zip "https://github.com/XTLS/Xray-core/releases/download/v$core/Xray-linux-64.zip" || { 
+#         echo "Failed to download Xray-core. Are you sure this is the correct version? Check for typos."; 
+#         exit 1;
+#     }
+# fi
+# if unzip Xray-linux-64.zip; then
+#     rm Xray-linux-64.zip
+#     rm geosite.dat
+#     rm geoip.dat
+# else
+#     echo "Failed to unzip Xray-linux-64.zip."
+#     exit 1;  
+# fi
 
 
 echo "Success! Now get ready for setup."
@@ -161,7 +106,8 @@ ENV="$HOME/$panel/.env"
 #setting up env
 sed -i "s|^SERVICE_PORT = .*|SERVICE_PORT = $service|" "$ENV"
 sed -i "s|^XRAY_API_PORT = .*|XRAY_API_PORT = $api|" "$ENV"
-sed -i "s|^# XRAY_EXECUTABLE_PATH = .*|XRAY_EXECUTABLE_PATH = /var/lib/marzban-node/$panel-core|" "$ENV"
+# Commented because of an issue with node environment
+# sed -i "s|^# XRAY_EXECUTABLE_PATH = .*|XRAY_EXECUTABLE_PATH = $HOME/$panel/xray-core/xray|" "$ENV"
 sed -i "s|^SSL_CERT_FILE = .*|# SSL_CERT_FILE = /var/lib/marzban-node/ssl_cert.pem|" "$ENV"
 sed -i "s|^SSL_KEY_FILE = .*|# SSL_KEY_FILE = /var/lib/marzban-node/ssl_key.pem|" "$ENV"
 sed -i "s|^SSL_CLIENT_CERT_FILE = .*|SSL_CLIENT_CERT_FILE = /var/lib/marzban-node/$panel.pem|" "$ENV"
