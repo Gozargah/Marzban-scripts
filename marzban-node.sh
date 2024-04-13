@@ -41,11 +41,7 @@ then
 fi
 clear
 
-echo "Fetching node files..."
-sudo mkdir -p $HOME/$panel
-sudo mkdir -p /var/lib/marzban-node
-wget -O $HOME/$panel/docker-compose.yml  https://raw.githubusercontent.com/Gozargah/Marzban-node/master/docker-compose.yml
-wget -O $HOME/$panel/.env https://raw.githubusercontent.com/Gozargah/Marzban-node/master/.env.example
+
 
 
 
@@ -155,29 +151,53 @@ while true; do
         echo "Invalid input. Please enter a valid port number between 1 and 65535."
     fi
 done
-
+sudo mkdir -p $HOME/$panel
+sudo mkdir -p /var/lib/marzban-node
+# echo "Fetching node files..."
+# wget -O $HOME/$panel/docker-compose.yml  https://raw.githubusercontent.com/Gozargah/Marzban-node/master/docker-compose.yml
+# wget -O $HOME/$panel/.env https://raw.githubusercontent.com/Gozargah/Marzban-node/master/.env.example
 ENV="$HOME/$panel/.env"
-
+DOCKER="$HOME/$panel/docker-compose.yml"
 #setting up env
-sed -i "s|^SERVICE_PORT = .*|SERVICE_PORT = $service|" "$ENV"
-sed -i "s|^XRAY_API_PORT = .*|XRAY_API_PORT = $api|" "$ENV"
-sed -i "s|^# XRAY_EXECUTABLE_PATH = .*|XRAY_EXECUTABLE_PATH = /var/lib/marzban-node/$panel-core|" "$ENV"
-sed -i "s|^SSL_CERT_FILE = .*|# SSL_CERT_FILE = /var/lib/marzban-node/ssl_cert.pem|" "$ENV"
-sed -i "s|^SSL_KEY_FILE = .*|# SSL_KEY_FILE = /var/lib/marzban-node/ssl_key.pem|" "$ENV"
-sed -i "s|^SSL_CLIENT_CERT_FILE = .*|SSL_CLIENT_CERT_FILE = /var/lib/marzban-node/$panel.pem|" "$ENV"
-sed -i "s|^# SERVICE_PROTOCOL = rpyc|SERVICE_PROTOCOL = rest|" "$ENV"
+cat << EOF > "$ENV"
+SERVICE_PORT = $service
+XRAY_API_PORT = $api
+XRAY_EXECUTABLE_PATH = /var/lib/marzban-node/$panel-core
+SSL_CLIENT_CERT_FILE = /var/lib/marzban-node/$panel.pem
+SERVICE_PROTOCOL = rest
+EOF
 
-echo ".env is ready! Almost done."
-echo "Please paste the content of the Client Certificate, then type 'END' on a new line when finished:"
+echo ".env file has been created successfully."
+
+#setting up docker
+
+
+to the file
+cat << 'EOF' > $DOCKER
+services:
+  marzban-node:
+
+    image: gozargah/marzban-node:latest
+    restart: always
+    network_mode: host
+    env_file: .env
+    volumes:
+      - /var/lib/marzban-node:/var/lib/marzban-node
+EOF
+
+echo "docker-compose.yml has been created successfully."
+
+echo "Please paste the content of the Client Certificate, press ENTER on a new line when finished:"
 
 cert=""
 while IFS= read -r line
 do
-    if [[ $line == "END" ]]; then
+    if [[ -z $line ]]; then
         break
     fi
     cert+="$line\n"
 done
+
 
 echo -e "$cert" | sudo tee /var/lib/marzban-node/$panel.pem > /dev/null
 
