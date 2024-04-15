@@ -47,11 +47,9 @@ clear
 
 
 
-echo "Which version of Xray-core do you want?(exmp: 1.8.8)(leave blank for latest)"
-read -r version
-version=${version:-latest}
 
-# Function to download XRay based on CPU architecture
+
+#Fetching CPU architecture
 architecture() {
   local arch
   case "$(uname -m)" in
@@ -108,7 +106,13 @@ architecture() {
   echo "$arch"
 }
 arch=$(architecture)
+#Setting path
+sudo mkdir -p /var/lib/marzban-node
 cd "/var/lib/marzban-node/"
+#Fetching core
+echo "Which version of Xray-core do you want?(exmp: 1.8.8)(leave blank for latest)"
+read -r version
+version=${version:-latest}
 if [[ $version == "latest" ]]; then
     wget -O xray.zip "https://github.com/XTLS/Xray-core/releases/latest/download/Xray-linux-$arch.zip"
 else
@@ -129,6 +133,7 @@ fi
 
 echo "Success! Now get ready for setup."
 
+#port setup
 while true; do
     echo "Enter the SERVICE PORT value (default 62050):"
     read -r service
@@ -151,11 +156,15 @@ while true; do
         echo "Invalid input. Please enter a valid port number between 1 and 65535."
     fi
 done
+
+#ENV and Docker setup
 sudo mkdir -p $HOME/$panel
-sudo mkdir -p /var/lib/marzban-node
+
 # echo "Fetching node files..."
 # wget -O $HOME/$panel/docker-compose.yml  https://raw.githubusercontent.com/Gozargah/Marzban-node/master/docker-compose.yml
 # wget -O $HOME/$panel/.env https://raw.githubusercontent.com/Gozargah/Marzban-node/master/.env.example
+
+#defining path
 ENV="$HOME/$panel/.env"
 DOCKER="$HOME/$panel/docker-compose.yml"
 #setting up env
