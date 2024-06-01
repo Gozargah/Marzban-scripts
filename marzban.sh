@@ -9,7 +9,6 @@ APP_DIR="$INSTALL_DIR/$APP_NAME"
 DATA_DIR="/var/lib/$APP_NAME"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 
-
 colorized_echo() {
     local color=$1
     local text=$2
@@ -44,11 +43,11 @@ detect_os() {
     # Detect the operating system
     if [ -f /etc/lsb-release ]; then
         OS=$(lsb_release -si)
-        elif [ -f /etc/os-release ]; then
+    elif [ -f /etc/os-release ]; then
         OS=$(awk -F= '/^NAME/{print $2}' /etc/os-release | tr -d '"')
-        elif [ -f /etc/redhat-release ]; then
+    elif [ -f /etc/redhat-release ]; then
         OS=$(cat /etc/redhat-release | awk '{print $1}')
-        elif [ -f /etc/arch-release ]; then
+    elif [ -f /etc/arch-release ]; then
         OS="Arch"
     else
         colorized_echo red "Unsupported operating system"
@@ -61,16 +60,19 @@ detect_and_update_package_manager() {
     if [[ "$OS" == "Ubuntu"* ]] || [[ "$OS" == "Debian"* ]]; then
         PKG_MANAGER="apt-get"
         $PKG_MANAGER update
-        elif [[ "$OS" == "CentOS"* ]] || [[ "$OS" == "AlmaLinux"* ]]; then
+    elif [[ "$OS" == "CentOS"* ]] || [[ "$OS" == "AlmaLinux"* ]]; then
         PKG_MANAGER="yum"
         $PKG_MANAGER update -y
         $PKG_MANAGER install -y epel-release
-        elif [ "$OS" == "Fedora"* ]; then
+    elif [ "$OS" == "Fedora"* ]; then
         PKG_MANAGER="dnf"
         $PKG_MANAGER update
-        elif [ "$OS" == "Arch" ]; then
+    elif [ "$OS" == "Arch" ]; then
         PKG_MANAGER="pacman"
         $PKG_MANAGER -Sy
+    elif [[ "$OS" == "openSUSE"* ]]; then
+        PKG_MANAGER="zypper"
+        $PKG_MANAGER refresh
     else
         colorized_echo red "Unsupported operating system"
         exit 1
@@ -81,7 +83,7 @@ detect_compose() {
     # Check if docker compose command exists
     if docker compose >/dev/null 2>&1; then
         COMPOSE='docker compose'
-        elif docker-compose >/dev/null 2>&1; then
+    elif docker-compose >/dev/null 2>&1; then
         COMPOSE='docker-compose'
     else
         colorized_echo red "docker compose not found"
@@ -98,12 +100,14 @@ install_package () {
     colorized_echo blue "Installing $PACKAGE"
     if [[ "$OS" == "Ubuntu"* ]] || [[ "$OS" == "Debian"* ]]; then
         $PKG_MANAGER -y install "$PACKAGE"
-        elif [[ "$OS" == "CentOS"* ]] || [[ "$OS" == "AlmaLinux"* ]]; then
+    elif [[ "$OS" == "CentOS"* ]] || [[ "$OS" == "AlmaLinux"* ]]; then
         $PKG_MANAGER install -y "$PACKAGE"
-        elif [ "$OS" == "Fedora"* ]; then
+    elif [ "$OS" == "Fedora"* ]; then
         $PKG_MANAGER install -y "$PACKAGE"
-        elif [ "$OS" == "Arch" ]; then
+    elif [ "$OS" == "Arch" ]; then
         $PKG_MANAGER -S --noconfirm "$PACKAGE"
+    elif [[ "$OS" == "openSUSE"* ]]; then
+        $PKG_MANAGER install -y "$PACKAGE"
     else
         colorized_echo red "Unsupported operating system"
         exit 1
@@ -150,7 +154,6 @@ install_marzban() {
 
     colorized_echo green "Marzban's files downloaded successfully"
 }
-
 
 uninstall_marzban_script() {
     if [ -f "/usr/local/bin/marzban" ]; then
@@ -205,7 +208,6 @@ follow_marzban_logs() {
 marzban_cli() {
     $COMPOSE -f $COMPOSE_FILE -p "$APP_NAME" exec -e CLI_PROG_NAME="marzban cli" marzban marzban-cli "$@"
 }
-
 
 update_marzban_script() {
     FETCH_REPO="Gozargah/Marzban-scripts"
@@ -342,7 +344,6 @@ up_command() {
 }
 
 down_command() {
-
     # Check if marzban is installed
     if ! is_marzban_installed; then
         colorized_echo red "Marzban's not installed!"
@@ -403,7 +404,6 @@ restart_command() {
 }
 
 status_command() {
-
     # Check if marzban is installed
     if ! is_marzban_installed; then
         echo -n "Status: "
@@ -523,7 +523,6 @@ update_command() {
 
     colorized_echo blue "Marzban updated successfully"
 }
-
 
 usage() {
     colorized_echo red "Usage: marzban [command]"
