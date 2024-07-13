@@ -129,12 +129,19 @@ install_marzban() {
     # Fetch releases
     FILES_URL_PREFIX="https://raw.githubusercontent.com/Gozargah/Marzban/master"
 
+    dev=$1
+
     mkdir -p "$DATA_DIR"
     mkdir -p "$APP_DIR"
 
     colorized_echo blue "Fetching compose file"
     curl -sL "$FILES_URL_PREFIX/docker-compose.yml" -o "$APP_DIR/docker-compose.yml"
     colorized_echo green "File saved in $APP_DIR/docker-compose.yml"
+
+    if [ "$dev" = true ]; then
+        colorized_echo red "setting marzban image tag to 'dev'."
+        sed -i "s|gozargah/marzban:latest|gozargah/marzban:dev|g" "$APP_DIR/docker-compose.yml"
+    fi
 
     colorized_echo blue "Fetching .env file"
     curl -sL "$FILES_URL_PREFIX/.env.example" -o "$APP_DIR/.env"
@@ -256,9 +263,25 @@ install_command() {
     if ! command -v docker >/dev/null 2>&1; then
         install_docker
     fi
+
+    dev=false
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --dev)
+                dev=true
+                shift
+                ;;
+            *)
+                echo "Unknown option: $1"
+                exit 1
+                ;;
+        esac
+    done
+
     detect_compose
     install_marzban_script
-    install_marzban
+    install_marzban $dev
     up_marzban
     follow_marzban_logs
 }
