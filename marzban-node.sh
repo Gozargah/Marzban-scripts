@@ -11,6 +11,14 @@ DATA_DIR="/var/lib/$APP_NAME"
 DATA_MAIN_DIR="/var/lib/$APP_NAME_MAIN"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 LAST_XRAY_CORES=5
+# CHANGE BELOW BEFORE APPLYING THE PR
+
+# FETCH_REPO="Gozargah/Marzban-node"
+# SCRIPT_URL="https://github.com/$FETCH_REPO/raw/master/marzban-node.sh"
+########################################
+FETCH_REPO="DigneZzZ/Marzban-scripts--n"
+SCRIPT_URL="https://github.com/$FETCH_REPO/raw/node/marzban-node.sh"
+
 
 # Fetch IP address from ipinfo.io API
 NODE_IP=$(curl -s https://ipinfo.io/ip)
@@ -125,8 +133,6 @@ install_docker() {
 }
 
 install_marzban_node_script() {
-    FETCH_REPO="DigneZzZ/Marzban-scripts--n"
-    SCRIPT_URL="https://github.com/$FETCH_REPO/raw/node/marzban-node.sh"
     colorized_echo blue "Installing marzban script"
     curl -sSL $SCRIPT_URL | install -m 755 /dev/stdin /usr/local/bin/marzban-node
     colorized_echo green "Marzban-NODE script installed successfully"
@@ -261,9 +267,6 @@ follow_marzban_node_logs() {
 
 
 update_marzban_node_script() {
-    #FETCH_REPO="Gozargah/Marzban-scripts"
-    FETCH_REPO="DigneZzZ/Marzban-scripts--n"
-    SCRIPT_URL="https://github.com/$FETCH_REPO/raw/node/marzban-node.sh"
     colorized_echo blue "Updating marzban-node script"
     curl -sSL $SCRIPT_URL | install -m 755 /dev/stdin /usr/local/bin/marzban-node
     colorized_echo green "marzban-node script updated successfully"
