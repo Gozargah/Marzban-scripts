@@ -178,8 +178,8 @@ services:
       SERVICE_PROTOCOL: "rest"
 
     volumes:
-      - $DATA_DIR:/var/lib/marzban-node
       - $DATA_MAIN_DIR:/var/lib/marzban
+      - $DATA_DIR:/var/lib/marzban-node
 EOL
 
     colorized_echo green "File saved in $APP_DIR/docker-compose.yml"
@@ -670,14 +670,19 @@ update_core_command() {
     check_running_as_root
     get_xray_core
     # Change the Marzban core
-    marzban_folder='$APP_DIR'
-    xray_executable_path="XRAY_EXECUTABLE_PATH=\"/var/lib/marzban/xray-core/xray\""
+
 
     echo "Changing the Marzban core..."
-    # Check if the XRAY_EXECUTABLE_PATH string already exists in the .env file
-    if ! grep -q "^${xray_executable_path}" "$COMPOSE_FILE"; then
-      # If the string does not exist, add it
-      echo "${xray_executable_path}" >> "$COMPOSE_FILE"
+    # Check if the XRAY_EXECUTABLE_PATH string already exists in the docker-compose.yml file
+    if ! grep -q "XRAY_EXECUTABLE_PATH: \"/var/lib/marzban/xray-core/xray\"" "$COMPOSE_FILE"; then
+        # If the string does not exist, add it
+        sed -i '/environment:/!b;n;/XRAY_EXECUTABLE_PATH/!a\      XRAY_EXECUTABLE_PATH: "/var/lib/marzban/xray-core/xray"' "$COMPOSE_FILE"
+    fi
+
+    # Check if the /var/lib/marzban:/var/lib/marzban string already exists in the docker-compose.yml file
+    if ! grep -q "^\s*- /var/lib/marzban:/var/lib/marzban\s*$" "$COMPOSE_FILE"; then
+        # If the string does not exist, add it
+        sed -i '/volumes:/!b;n;/^- \/var\/lib\/marzban:\/var\/lib\/marzban/!a\      - \/var\/lib\/marзban:\/var\/lib\/marzban' "$COMPOSE_FILE"
     fi
 
     # Restart Marzban
