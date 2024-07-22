@@ -162,6 +162,16 @@ install_marzban_node() {
 
     print_info "Certificate saved to $CERT_FILE"
 
+    # Prompt the user to choose REST or another protocol
+    print_info "Do you want to use REST protocol? (Y/n): "
+    read -r use_rest
+
+    # Default to "Y" if the user just presses ENTER
+    if [[ -z "$use_rest" || "$use_rest" =~ ^[Yy]$ ]]; then
+        USE_REST=true
+    else
+        USE_REST=false
+    fi
 
     colorized_echo blue "Generating compose file"
     # curl -sL "$FILES_URL_PREFIX/docker-compose.yml" -o "$APP_DIR/docker-compose.yml"
@@ -179,16 +189,22 @@ services:
     # env_file: .env
     environment:
       SSL_CLIENT_CERT_FILE: "$DATA_DIR/cert.pem"
+EOL
+
+    # Add SERVICE_PROTOCOL line only if REST is selected
+    if [[ "$USE_REST" = true ]]; then
+        cat >> "$COMPOSE_FILE" <<EOL
       SERVICE_PROTOCOL: "rest"
+EOL
+    fi
+
+    cat >> "$COMPOSE_FILE" <<EOL
 
     volumes:
       - $DATA_MAIN_DIR:/var/lib/marzban
       - $DATA_DIR:/var/lib/marzban-node
 EOL
-
     colorized_echo green "File saved in $APP_DIR/docker-compose.yml"
-
-
 }
 
 
