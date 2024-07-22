@@ -120,7 +120,7 @@ install_docker() {
 }
 
 install_marzban_node_script() {
-    FETCH_REPO="DigneZzZ/Marzban-scripts-nn"
+    FETCH_REPO="DigneZzZ/Marzban-scripts--n"
     SCRIPT_URL="https://github.com/$FETCH_REPO/raw/node/marzban-node.sh"
     colorized_echo blue "Installing marzban script"
     curl -sSL $SCRIPT_URL | install -m 755 /dev/stdin /usr/local/bin/marzban-node
