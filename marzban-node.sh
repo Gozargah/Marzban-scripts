@@ -432,7 +432,7 @@ restart_command() {
     down_marzban_node
     up_marzban_node
     if [ "$no_logs" = false ]; then
-        follow_marzban_logs
+        follow_marzban_node_logs
     fi
 }
 
@@ -692,7 +692,7 @@ update_core_command() {
 }
 
 usage() {
-    colorized_echo red "Usage: marzban [command]"
+    colorized_echo red "Usage: $APP_NAME [command]"
     echo
     echo "Commands:"
     echo "  up              Start services"
