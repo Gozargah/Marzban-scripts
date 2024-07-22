@@ -11,7 +11,8 @@ DATA_DIR="/var/lib/$APP_NAME"
 DATA_MAIN_DIR="/var/lib/$APP_NAME_MAIN"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 LAST_XRAY_CORES=5
-
+# File to save the certificate
+CERT_FILE="$DATA_DIR/cert.pem"
 colorized_echo() {
     local color=$1
     local text=$2
@@ -135,8 +136,7 @@ install_marzban_node() {
     mkdir -p "$APP_DIR"
     mkdir -p "$DATA_MAIN_DIR"
  
-    # File to save the certificate
-    CERT_FILE="$DATA_DIR/cert.pem"
+
 
     # Remove the file if it already exists and create a new one
     > "$CERT_FILE"
