@@ -3,7 +3,7 @@ set -e
 
 INSTALL_DIR="/root"
 if [ -z "$APP_NAME" ]; then
-    APP_NAME="Marzban-node"
+    APP_NAME="marzban-node"
     APP_NAME_MAIN="marzban"
 fi
 APP_DIR="$INSTALL_DIR/$APP_NAME"
