@@ -11,6 +11,10 @@ DATA_DIR="/var/lib/$APP_NAME"
 DATA_MAIN_DIR="/var/lib/$APP_NAME_MAIN"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 LAST_XRAY_CORES=5
+
+# Fetch IP address from ipinfo.io API
+NODE_IP=$(curl -s https://ipinfo.io/ip)
+
 # File to save the certificate
 CERT_FILE="$DATA_DIR/cert.pem"
 colorized_echo() {
@@ -295,6 +299,7 @@ install_command() {
     install_marzban_node
     up_marzban_node
     follow_marzban_node_logs
+    echo "Use your IP: $NODE_IP and defaults ports: 62050 and 62051 to setup your Marzban Main Panel"
 }
 
 uninstall_command() {
@@ -707,6 +712,8 @@ usage() {
     echo "  core-update     Update/Change Xray core"
     echo "  "
     echo "  Your cert file here: $CERT_FILE"
+    echo "  Your IP is: $NODE_IP"
+    echo "  Default ports: Service: 62050  and API: 62051"
     echo
 }
 
