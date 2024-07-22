@@ -682,7 +682,7 @@ update_core_command() {
     # Check if the /var/lib/marzban:/var/lib/marzban string already exists in the docker-compose.yml file
     if ! grep -q "^\s*- /var/lib/marzban:/var/lib/marzban\s*$" "$COMPOSE_FILE"; then
         # If the string does not exist, add it
-        sed -i '/volumes:/!b;n;/^- \/var\/lib\/marzban:\/var\/lib\/marzban/!a\      - \/var\/lib\/marзban:\/var\/lib\/marzban' "$COMPOSE_FILE"
+        sed -i '/volumes:/!b;n;/^- \/var\/lib\/marzban:\/var\/lib\/marzban/!a\      - \/var\/lib\/marzban:\/var\/lib\/marzban' "$COMPOSE_FILE"
     fi
 
     # Restart Marzban
