@@ -136,7 +136,7 @@ install_marzban_node() {
     mkdir -p "$DATA_MAIN_DIR"
  
     # File to save the certificate
-    CERT_FILE="$DATA_DIR/sert.pem"
+    CERT_FILE="$DATA_DIR/cert.pem"
 
     # Remove the file if it already exists and create a new one
     > "$CERT_FILE"
@@ -174,7 +174,7 @@ services:
 
     # env_file: .env
     environment:
-      SSL_CLIENT_CERT_FILE: "$DATA_DIR/sert.pem"
+      SSL_CLIENT_CERT_FILE: "$DATA_DIR/cert.pem"
       SERVICE_PROTOCOL: "rest"
 
     volumes:
@@ -705,6 +705,8 @@ usage() {
     echo "  uninstall       Uninstall Marzban-node"
     echo "  install-script  Install Marzban-node script"
     echo "  core-update     Update/Change Xray core"
+    echo "  "
+    echo "  Your cert file here: $CERT_FILE"
     echo
 }
 
