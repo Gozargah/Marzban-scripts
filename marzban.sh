@@ -135,6 +135,24 @@ install_marzban() {
     colorized_echo blue "Fetching compose file"
     curl -sL "$FILES_URL_PREFIX/docker-compose.yml" -o "$APP_DIR/docker-compose.yml"
     docker_file_path="$APP_DIR/docker-compose.yml"
+    # Function to check if a version exists in the GitHub releases
+    check_version_exists() {
+        local version=$1
+        if [ "$version" == "latest" ]; then
+            return 0
+        fi
+
+        # Fetch the release data from GitHub API
+        response=$(curl -s "$repo_url")
+
+        # Check if the response contains the version tag
+        if echo "$response" | jq -e ".[] | select(.tag_name == \"v${version}\")" > /dev/null; then
+            return 0
+        else
+            return 1
+        fi
+    }
+
     while true; do
         read -p "Which version of Marzban do you want to install? (e.g 0.5.2) (Default Install latest): " marzban_version
 
@@ -143,16 +161,22 @@ install_marzban() {
             marzban_version="latest"
         fi
 
+        # Check if the version is valid and exists
         if [[ "$marzban_version" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ || "$marzban_version" == "latest" ]]; then
-            if [ "$marzban_version" == "latest" ]; then
-                sed -i "s|image: gozargah/marzban:.*|image: gozargah/marzban:latest|g" $docker_file_path
+            if check_version_exists "$marzban_version"; then
+                if [ "$marzban_version" == "latest" ]; then
+                    sed -i "s|image: gozargah/marzban:.*|image: gozargah/marzban:latest|g" "$docker_file_path"
+                else
+                    sed -i "s|image: gozargah/marzban:.*|image: gozargah/marzban:v${marzban_version}|g" "$docker_file_path"
+                fi
+                echo "Installing v$marzban_version"
+                break
             else
-                sed -i "s|image: gozargah/marzban:.*|image: gozargah/marzban:v${marzban_version}|g" $docker_file_path
+                echo "Version v$marzban_version does not exist. Please enter a valid version or press Enter for the latest version."
             fi
-            echo "Installing v$marzban_version"
-            break
         else
             echo "Invalid version format. Please enter a valid version (e.g. 0.5.2) or press Enter for the latest version."
+
         fi
     done
     colorized_echo green "File saved in $APP_DIR/docker-compose.yml"
