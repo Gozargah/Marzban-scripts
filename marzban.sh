@@ -140,7 +140,7 @@ install_marzban() {
     if [ "$marzban_version" == "latest" ]; then
         sed -i "s|image: gozargah/marzban:.*|image: gozargah/marzban:latest|g" "$docker_file_path"
     else
-        sed -i "s|image: gozargah/marzban:.*|image: gozargah/marzban:v${marzban_version}|g" "$docker_file_path"
+        sed -i "s|image: gozargah/marzban:.*|image: gozargah/marzban:${marzban_version}|g" "$docker_file_path"
     fi
     echo "Installing $marzban_version version"
     colorized_echo green "File saved in $APP_DIR/docker-compose.yml"
@@ -280,23 +280,23 @@ install_command() {
         response=$(curl -s "$repo_url")
 
         # Check if the response contains the version tag
-        if echo "$response" | jq -e ".[] | select(.tag_name == \"v${version}\")" > /dev/null; then
+        if echo "$response" | jq -e ".[] | select(.tag_name == \"${version}\")" > /dev/null; then
             return 0
         else
             return 1
         fi
     }
     # Check if the version is valid and exists
-    if [[ "$1" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ || "$1" == "latest" ]]; then
+    if [[ "$1" == "latest" || "$1" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         if check_version_exists "$1"; then
                 install_marzban "$1"
             echo "Installing $1 version"
         else
-            echo "Version $1 does not exist. Please enter a valid version (e.g. 0.5.2)"
+            echo "Version $1 does not exist. Please enter a valid version (e.g. v0.5.2)"
             exit 1
         fi
     else
-        echo "Invalid version format. Please enter a valid version (e.g. 0.5.2)"
+        echo "Invalid version format. Please enter a valid version (e.g. v0.5.2)"
         exit 1
     fi
     up_marzban
