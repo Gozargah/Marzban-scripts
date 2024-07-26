@@ -11,7 +11,6 @@ DATA_DIR="/var/lib/$APP_NAME"
 DATA_MAIN_DIR="/var/lib/$APP_NAME_MAIN"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 LAST_XRAY_CORES=5
-# CHANGE BELOW BEFORE APPLYING THE PR
 
 FETCH_REPO="Gozargah/Marzban-node"
 SCRIPT_URL="https://github.com/$FETCH_REPO/raw/master/marzban-node.sh"
