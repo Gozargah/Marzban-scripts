@@ -13,11 +13,8 @@ COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 LAST_XRAY_CORES=5
 # CHANGE BELOW BEFORE APPLYING THE PR
 
-# FETCH_REPO="Gozargah/Marzban-node"
-# SCRIPT_URL="https://github.com/$FETCH_REPO/raw/master/marzban-node.sh"
-########################################
-FETCH_REPO="DigneZzZ/Marzban-scripts--n"
-SCRIPT_URL="https://github.com/$FETCH_REPO/raw/node/marzban-node.sh"
+FETCH_REPO="Gozargah/Marzban-node"
+SCRIPT_URL="https://github.com/$FETCH_REPO/raw/master/marzban-node.sh"
 
 
 # Fetch IP address from ipinfo.io API
