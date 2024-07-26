@@ -127,6 +127,7 @@ install_marzban_script() {
 }
 
 install_marzban() {
+    local marzban_version=$1
     # Fetch releases
     FILES_URL_PREFIX="https://raw.githubusercontent.com/Gozargah/Marzban/master"
 
@@ -135,6 +136,14 @@ install_marzban() {
 
     colorized_echo blue "Fetching compose file"
     curl -sL "$FILES_URL_PREFIX/docker-compose.yml" -o "$APP_DIR/docker-compose.yml"
+    docker_file_path="$APP_DIR/docker-compose.yml"
+    # install requested version
+    if [ "$marzban_version" == "latest" ]; then
+        sed -i "s|image: gozargah/marzban:.*|image: gozargah/marzban:latest|g" "$docker_file_path"
+    else
+        sed -i "s|image: gozargah/marzban:.*|image: gozargah/marzban:${marzban_version}|g" "$docker_file_path"
+    fi
+    echo "Installing $marzban_version version"
     colorized_echo green "File saved in $APP_DIR/docker-compose.yml"
 
     colorized_echo blue "Fetching .env file"
@@ -259,7 +268,37 @@ install_command() {
     fi
     detect_compose
     install_marzban_script
-    install_marzban
+    # Function to check if a version exists in the GitHub releases
+    check_version_exists() {
+        local version=$1
+        repo_url="https://api.github.com/repos/Gozargah/Marzban/releases"
+        if [ "$version" == "latest" ]; then
+            return 0
+        fi
+
+        # Fetch the release data from GitHub API
+        response=$(curl -s "$repo_url")
+
+        # Check if the response contains the version tag
+        if echo "$response" | jq -e ".[] | select(.tag_name == \"${version}\")" > /dev/null; then
+            return 0
+        else
+            return 1
+        fi
+    }
+    # Check if the version is valid and exists
+    if [[ "$1" == "latest" || "$1" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        if check_version_exists "$1"; then
+                install_marzban "$1"
+            echo "Installing $1 version"
+        else
+            echo "Version $1 does not exist. Please enter a valid version (e.g. v0.5.2)"
+            exit 1
+        fi
+    else
+        echo "Invalid version format. Please enter a valid version (e.g. v0.5.2)"
+        exit 1
+    fi
     up_marzban
     follow_marzban_logs
 }
@@ -700,7 +739,7 @@ case "$1" in
     cli)
     shift; cli_command "$@";;
     install)
-    shift; install_command "$@";;
+    shift; install_command "${1:-latest}";;
     update)
     shift; update_command "$@";;
     uninstall)
