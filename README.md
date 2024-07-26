@@ -11,6 +11,11 @@ Or you can only install this script (marzban command) on your server by using th
 sudo bash -c "$(curl -sL https://github.com/Gozargah/Marzban-scripts/raw/master/marzban.sh)" @ install-script
 ```
 
+this is an example for installing a specific version
+```
+sudo bash -c "$(curl -sL https://github.com/Gozargah/Marzban-scripts/raw/master/marzban.sh)" @ install v0.5.2
+```
+
 
 ## Install NODE
 Install Marzban-node on your server using this command
