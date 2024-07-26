@@ -728,7 +728,7 @@ usage() {
     echo "  "
     echo "  Your cert file here: $CERT_FILE"
     echo "  Your IP is: $NODE_IP"
-    echo "  Default ports: Service: 62050  and API: 62051"
+
     echo
 }
 
