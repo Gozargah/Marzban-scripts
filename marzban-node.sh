@@ -36,9 +36,9 @@ fi
 
 if [[ "$COMMAND" == "install" || "$COMMAND" == "install-script" ]] && [ -z "$NODE_NAME" ]; then
     NODE_NAME="marzban-node"
-fi
 
-APP_NAME="marzban-node"
+
+APP_NAME=$NODE_NAME
 INSTALL_DIR="/opt"
 APP_DIR="$INSTALL_DIR/$APP_NAME"
 DATA_DIR="/var/lib/$APP_NAME"
@@ -46,7 +46,7 @@ DATA_MAIN_DIR="/var/lib/$APP_NAME"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 LAST_XRAY_CORES=5
 CERT_FILE="$DATA_DIR/cert.pem"
-FETCH_REPO="Gozargah/Marzban-scripts"
+FETCH_REPO="Gozargah/Marzban-node"
 SCRIPT_URL="https://github.com/$FETCH_REPO/raw/master/marzban-node.sh"
 
 colorized_echo() {
@@ -744,9 +744,9 @@ update_core_command() {
     fi
 
     # Check if the /var/lib/marzban:/var/lib/marzban string already exists in the docker-compose.yml file
-    if ! grep -q "^\s*- $DATA_MAIN_DIR:/var/lib/marzban\s*$" "$COMPOSE_FILE"; then
+    if ! grep -q "^\s*- /var/lib/marzban:/var/lib/marzban\s*$" "$COMPOSE_FILE"; then
         # If the string does not exist, add it
-        sed -i '/volumes:/!b;n;/^- $DATA_MAIN_DIR:\/var\/lib\/marzban/!a\      - $DATA_MAIN_DIR:\/var\/lib\/marzban' "$COMPOSE_FILE"
+        sed -i '/volumes:/!b;n;/^- \/var\/lib\/marzban:\/var\/lib\/marzban/!a\      - \/var\/lib\/marzban:\/var\/lib\/marzban' "$COMPOSE_FILE"
     fi
 
     # Restart Marzban-node
