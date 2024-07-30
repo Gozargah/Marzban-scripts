@@ -6,7 +6,7 @@ while [[ $# -gt 0 ]]; do
     key="$1"
 
     case $key in
-        install|update|uninstall|up|down|restart|status|logs|core-update|install-script)
+        install|update|uninstall|up|down|restart|status|logs|core-update|install-script|edit)
         COMMAND="$1"
         shift # past argument
         ;;
@@ -38,7 +38,7 @@ if [[ "$COMMAND" == "install" || "$COMMAND" == "install-script" ]] && [ -z "$NOD
     NODE_NAME="marzban-node"
 fi
 
-APP_NAME="marzban-node"
+APP_NAME=$NODE_NAME
 INSTALL_DIR="/opt"
 APP_DIR="$INSTALL_DIR/$APP_NAME"
 DATA_DIR="/var/lib/$APP_NAME"
@@ -755,6 +755,45 @@ update_core_command() {
     colorized_echo blue "Installation XRAY-CORE version $selected_version completed."
 }
 
+install_nano() {
+    colorized_echo blue "Installing nano"
+    if [[ "$OS" == "Ubuntu"* ]] || [[ "$OS" == "Debian"* ]]; then
+        $PKG_MANAGER -y install nano
+    elif [[ "$OS" == "CentOS"* ]] || [[ "$OS" == "AlmaLinux"* ]]; then
+        $PKG_MANAGER install -y nano
+    elif [ "$OS" == "Fedora"* ]; then
+        $PKG_MANAGER install -y nano
+    elif [ "$OS" == "Arch" ]; then
+        $PKG_MANAGER -S --noconfirm nano
+    else
+        colorized_echo red "Unsupported operating system"
+        exit 1
+    fi
+    colorized_echo green "nano installed successfully"
+}
+
+check_editor() {
+    if command -v nano >/dev/null 2>&1; then
+        EDITOR="nano"
+    elif command -v vi >/dev/null 2>&1; then
+        EDITOR="vi"
+    else
+        install_nano
+        EDITOR="nano"
+    fi
+}
+edit_command() {
+    detect_os
+    check_editor
+    if [ -f "$COMPOSE_FILE" ]; then
+        $EDITOR "$COMPOSE_FILE"
+    else
+        colorized_echo red "Compose file not found at $COMPOSE_FILE"
+        exit 1
+    fi
+}
+
+
 usage() {
 
     colorized_echo red "Usage: $APP_NAME [command]"
@@ -769,6 +808,7 @@ usage() {
     echo "  update          Update latest version"
     echo "  uninstall       Uninstall Marzban-node"
     echo "  install-script  Install Marzban-node script"
+    echo "  edit            edit docker-compose.yml (via nano or vi editor)"
     echo "  core-update     Update/Change Xray core"
     echo
     colorized_echo magenta "  Cert file path: $CERT_FILE"
@@ -818,6 +858,9 @@ case "$COMMAND" in
     ;;
     install-script)
     install_marzban_node_script
+    ;;
+    edit)
+    edit_command
     ;;
     *)
     usage
