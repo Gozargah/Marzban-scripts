@@ -12,7 +12,7 @@ while [[ $# -gt 0 ]]; do
         ;;
         --name)
         if [[ "$COMMAND" == "install" || "$COMMAND" == "install-script" ]]; then
-            APP_NAME="$2"
+            NODE_NAME="$2"
             shift # past argument
         else
             echo "Error: --name parameter is only allowed with 'install' or 'install-script' commands."
@@ -27,21 +27,22 @@ while [[ $# -gt 0 ]]; do
 done
 
 # Fetch IP address from ipinfo.io API
-NODE_IP=$(curl -s https://ipinfo.io/ip)
+NODE_IP=$(curl -s -4 ifconfig.io)
 
-if [[ "$COMMAND" == "install" || "$COMMAND" == "install-script" ]] && [ -z "$APP_NAME" ]; then
-    APP_NAME="node"
+# If the IPv4 retrieval is empty, attempt to retrieve the IPv6 address
+if [ -z "$NODE_IP" ]; then
+    NODE_IP=$(curl -s -6 ifconfig.io)
 fi
 
-if [ -z "$APP_NAME" ]; then
-    SCRIPT_NAME=$(basename "$0")
-    APP_NAME="${SCRIPT_NAME%.*}"
+if [[ "$COMMAND" == "install" || "$COMMAND" == "install-script" ]] && [ -z "$NODE_NAME" ]; then
+    NODE_NAME="marzban-node"
 fi
-APP_NAME_MAIN="marzban"
-INSTALL_DIR="/root"
+
+APP_NAME="marzban-node"
+INSTALL_DIR="/opt"
 APP_DIR="$INSTALL_DIR/$APP_NAME"
 DATA_DIR="/var/lib/$APP_NAME"
-DATA_MAIN_DIR="/var/lib/$APP_NAME_MAIN"
+DATA_MAIN_DIR="/var/lib/$APP_NAME"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 LAST_XRAY_CORES=5
 CERT_FILE="$DATA_DIR/cert.pem"
@@ -161,10 +162,9 @@ install_marzban_node_script() {
     curl -sSL $SCRIPT_URL -o $TARGET_PATH
 
     sed -i "s/^APP_NAME=.*/APP_NAME=\"$APP_NAME\"/" $TARGET_PATH
-    sed -i "s/^APP_NAME_MAIN=.*/APP_NAME_MAIN=\"$APP_NAME_MAIN\"/" $TARGET_PATH
 
     chmod 755 $TARGET_PATH
-    colorized_echo green "Marzban-NODE script installed successfully at $TARGET_PATH"
+    colorized_echo green "Marzban-node script installed successfully at $TARGET_PATH"
 }
 
 install_marzban_node() {
@@ -184,7 +184,7 @@ install_marzban_node() {
     }
 
     # Prompt the user to input the certificate
-    print_info "Please paste the content of the Client Certificate, press ENTER on a new line when finished: "
+    echo -e "Please paste the content of the Client Certificate, press ENTER on a new line when finished: "
 
 
     while IFS= read -r line; do
@@ -198,8 +198,7 @@ install_marzban_node() {
     print_info "Certificate saved to $CERT_FILE"
 
     # Prompt the user to choose REST or another protocol
-    print_info "Do you want to use REST protocol? (Y/n): "
-    read -r use_rest
+    read -p "Do you want to use REST protocol? (Y/n): " -r use_rest
 
     # Default to "Y" if the user just presses ENTER
     if [[ -z "$use_rest" || "$use_rest" =~ ^[Yy]$ ]]; then
@@ -210,8 +209,7 @@ install_marzban_node() {
 
     # Prompt the user to enter ports
     while true; do
-        print_info "Enter the SERVICE_PORT (default 62050): "
-        read -r SERVICE_PORT
+        read -p "Enter the SERVICE_PORT (default 62050): " -r SERVICE_PORT
         if [[ -z "$SERVICE_PORT" ]]; then
             SERVICE_PORT=62050
         fi
@@ -223,8 +221,7 @@ install_marzban_node() {
     done
 
     while true; do
-        print_info "Enter the XRAY_API_PORT (default 62051): "
-        read -r XRAY_API_PORT
+        read -p "Enter the XRAY_API_PORT (default 62051): " -r XRAY_API_PORT
         if [[ -z "$XRAY_API_PORT" ]]; then
             XRAY_API_PORT=62051
         fi
@@ -241,7 +238,7 @@ install_marzban_node() {
     cat > "$COMPOSE_FILE" <<EOL
 services:
   marzban-node:
-    container_name: $APP_NAME
+    container_name: $NODE_NAME
     image: gozargah/marzban-node:latest
     restart: always
     network_mode: host
@@ -434,14 +431,14 @@ up_command() {
 
     # Check if marzban-node is installed
     if ! is_marzban_node_installed; then
-        colorized_echo red "Marzban's not installed!"
+        colorized_echo red "Marzban-node's not installed!"
         exit 1
     fi
 
     detect_compose
 
     if is_marzban_node_up; then
-        colorized_echo red "Marzban's already up"
+        colorized_echo red "Marzban-node's already up"
         exit 1
     fi
 
@@ -576,7 +573,7 @@ logs_command() {
 
     # Check if marzban is installed
     if ! is_marzban_node_installed; then
-        colorized_echo red "Marzban's not installed!"
+        colorized_echo red "Marzban-node's not installed!"
         exit 1
     fi
 
@@ -734,12 +731,12 @@ get_xray_core() {
     rm "${xray_filename}"
 }
 
-# Function to update the Marzban Main core
+# Function to update the Marzban-node Main core
 update_core_command() {
     check_running_as_root
     get_xray_core
-    # Change the Marzban core
-    echo "Changing the Marzban core..."
+    # Change the Marzban-node core
+    echo "Changing the Marzban-node core..."
     # Check if the XRAY_EXECUTABLE_PATH string already exists in the docker-compose.yml file
     if ! grep -q "XRAY_EXECUTABLE_PATH: \"/var/lib/marzban/xray-core/xray\"" "$COMPOSE_FILE"; then
         # If the string does not exist, add it
@@ -752,7 +749,7 @@ update_core_command() {
         sed -i '/volumes:/!b;n;/^- \/var\/lib\/marzban:\/var\/lib\/marzban/!a\      - \/var\/lib\/marzban:\/var\/lib\/marzban' "$COMPOSE_FILE"
     fi
 
-    # Restart Marzban
+    # Restart Marzban-node
     colorized_echo red "Restarting Marzban-node..."
     $APP_NAME restart -n
     colorized_echo blue "Installation XRAY-CORE version $selected_version completed."
@@ -774,13 +771,15 @@ usage() {
     echo "  install-script  Install Marzban-node script"
     echo "  core-update     Update/Change Xray core"
     echo
-    colorized_echo magenta "  Your cert file here: $CERT_FILE"
-    colorized_echo magenta "  Your IP is: $NODE_IP"
+    colorized_echo magenta "  Cert file path: $CERT_FILE"
+    colorized_echo magenta "  IP: $NODE_IP"
     colorized_echo magenta "  Current port configuration:"
     DEFAULT_SERVICE_PORT="62050"
     DEFAULT_XRAY_API_PORT="62051"
-    SERVICE_PORT=$(awk -F': ' '/SERVICE_PORT:/ {gsub(/"/, "", $2); print $2}' "$COMPOSE_FILE")
-    XRAY_API_PORT=$(awk -F': ' '/XRAY_API_PORT:/ {gsub(/"/, "", $2); print $2}' "$COMPOSE_FILE")
+    if [ -f "$COMPOSE_FILE" ]; then
+        SERVICE_PORT=$(awk -F': ' '/SERVICE_PORT:/ {gsub(/"/, "", $2); print $2}' "$COMPOSE_FILE")
+        XRAY_API_PORT=$(awk -F': ' '/XRAY_API_PORT:/ {gsub(/"/, "", $2); print $2}' "$COMPOSE_FILE")
+    fi
     SERVICE_PORT=${SERVICE_PORT:-$DEFAULT_SERVICE_PORT}
     XRAY_API_PORT=${XRAY_API_PORT:-$DEFAULT_XRAY_API_PORT}
     colorized_echo magenta "  SERVICE PORT: $SERVICE_PORT"

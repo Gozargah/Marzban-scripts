@@ -1,7 +1,7 @@
 # Marzban-scripts
 Scripts for Marzban
 
-## Install Panel
+## Installing Marzban
 Install Marzban on your server using this command
 ```bash
 sudo bash -c "$(curl -sL https://github.com/Gozargah/Marzban-scripts/raw/master/marzban.sh)" @ install
@@ -17,14 +17,14 @@ sudo bash -c "$(curl -sL https://github.com/Gozargah/Marzban-scripts/raw/master/
 ```
 
 
-## Install NODE
+## Installing Marzban-node
 Install Marzban-node on your server using this command
 ```bash
 sudo bash -c "$(curl -sL https://github.com/Gozargah/Marzban-scripts/raw/master/marzban-node.sh)" @ install
 ```
 Install Marzban-node on your server using this command with custom name:
 ```bash
-sudo bash -c "$(curl -sL https://github.com/Gozargah/Marzban-scripts/raw/master/marzban-node.sh)" @ install --name node33
+sudo bash -c "$(curl -sL https://github.com/Gozargah/Marzban-scripts/raw/master/marzban-node.sh)" @ install --name node
 ```
 Or you can only install this script (marzban-node command) on your server by using this command
 ```bash

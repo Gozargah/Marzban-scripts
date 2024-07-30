@@ -662,9 +662,15 @@ get_xray_core() {
     echo "Selected version $selected_version for installation."
 
     # Check if the required packages are installed
-    if ! dpkg -s unzip >/dev/null 2>&1; then
-      echo "Installing required packages..."
-      apt install -y unzip
+    if ! command -v unzip >/dev/null 2>&1; then
+      echo "Installing unzip..."
+      detect_os
+      install_package unzip
+    fi
+    if ! command -v wget >/dev/null 2>&1; then
+      echo "Installing wget..."
+      detect_os
+      install_package wget
     fi
 
     # Create the /var/lib/marzban/xray-core folder
@@ -676,7 +682,7 @@ get_xray_core() {
     xray_download_url="https://github.com/XTLS/Xray-core/releases/download/${selected_version}/${xray_filename}"
 
     echo "Downloading Xray-core version ${selected_version}..."
-    wget "${xray_download_url}"
+    wget -O "${xray_filename}" "${xray_download_url}"
 
     # Extract the file from the archive and delete the archive
     echo "Extracting Xray-core..."
@@ -704,7 +710,7 @@ update_core_command() {
     # Restart Marzban
     colorized_echo red "Restarting Marzban..."
     $APP_NAME restart -n
-    colorized_echo blue "Installation XRAY-CORE version $selected_version completed."
+    colorized_echo blue "Installation Xray-core version $selected_version completed."
 }
 
 usage() {
