@@ -755,33 +755,22 @@ update_core_command() {
     colorized_echo blue "Installation XRAY-CORE version $selected_version completed."
 }
 
-install_nano() {
-    colorized_echo blue "Installing nano"
-    if [[ "$OS" == "Ubuntu"* ]] || [[ "$OS" == "Debian"* ]]; then
-        $PKG_MANAGER -y install nano
-    elif [[ "$OS" == "CentOS"* ]] || [[ "$OS" == "AlmaLinux"* ]]; then
-        $PKG_MANAGER install -y nano
-    elif [ "$OS" == "Fedora"* ]; then
-        $PKG_MANAGER install -y nano
-    elif [ "$OS" == "Arch" ]; then
-        $PKG_MANAGER -S --noconfirm nano
-    else
-        colorized_echo red "Unsupported operating system"
-        exit 1
-    fi
-    colorized_echo green "nano installed successfully"
-}
 
 check_editor() {
-    if command -v nano >/dev/null 2>&1; then
-        EDITOR="nano"
-    elif command -v vi >/dev/null 2>&1; then
-        EDITOR="vi"
-    else
-        install_nano
-        EDITOR="nano"
+    if [ -z "$EDITOR" ]; then
+        if command -v nano >/dev/null 2>&1; then
+            EDITOR="nano"
+        elif command -v vi >/dev/null 2>&1; then
+            EDITOR="vi"
+        else
+            detect_os
+            install_package nano
+            EDITOR="nano"
+        fi
     fi
 }
+
+
 edit_command() {
     detect_os
     check_editor
