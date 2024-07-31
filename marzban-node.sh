@@ -167,6 +167,35 @@ install_marzban_node_script() {
     colorized_echo green "Marzban-node script installed successfully at $TARGET_PATH"
 }
 
+# Get a list of occupied ports
+get_occupied_ports() {
+    if command -v ss &> /dev/null; then
+        OCCUPIED_PORTS=$(ss -tuln | awk '{print $5}' | grep -Eo '[0-9]+$' | sort | uniq)
+    elif command -v netstat &> /dev/null; then
+        OCCUPIED_PORTS=$(netstat -tuln | awk '{print $4}' | grep -Eo '[0-9]+$' | sort | uniq)
+    else
+        colorized_echo yellow "Neither ss nor netstat found. Attempting to install net-tools."
+        detect_os
+        install_package net-tools
+        if command -v netstat &> /dev/null; then
+            OCCUPIED_PORTS=$(netstat -tuln | awk '{print $4}' | grep -Eo '[0-9]+$' | sort | uniq)
+        else
+            colorized_echo red "Failed to install net-tools. Please install it manually."
+            exit 1
+        fi
+    fi
+}
+
+# Function to check if a port is occupied
+is_port_occupied() {
+    if echo "$OCCUPIED_PORTS" | grep -q -w "$1"; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+
 install_marzban_node() {
     # Fetch releases
     mkdir -p "$DATA_DIR"
@@ -207,28 +236,38 @@ install_marzban_node() {
         USE_REST=false
     fi
 
-    # Prompt the user to enter ports
+   get_occupied_ports
+
+    # Prompt the user to enter ports with occupation check
     while true; do
         read -p "Enter the SERVICE_PORT (default 62050): " -r SERVICE_PORT
         if [[ -z "$SERVICE_PORT" ]]; then
             SERVICE_PORT=62050
         fi
-        if [[ "$SERVICE_PORT" -ge 1 && "$SERVICE_PORT" -le 65535 ]]; then
-            break
+        if [[ "$SERVICE_PORT" -ge 1024 && "$SERVICE_PORT" -le 65535 ]]; then
+            if is_port_occupied "$SERVICE_PORT"; then
+                colorized_echo red "Port $SERVICE_PORT is already in use. Please enter another port."
+            else
+                break
+            fi
         else
-            colorized_echo red "Invalid port. Please enter a port between 1 and 65535."
+            colorized_echo red "Invalid port. Please enter a port between 1024 and 65535."
         fi
     done
-
+    
     while true; do
         read -p "Enter the XRAY_API_PORT (default 62051): " -r XRAY_API_PORT
         if [[ -z "$XRAY_API_PORT" ]]; then
             XRAY_API_PORT=62051
         fi
-        if [[ "$XRAY_API_PORT" -ge 1 && "$XRAY_API_PORT" -le 65535 ]]; then
-            break
+        if [[ "$XRAY_API_PORT" -ge 1024 && "$XRAY_API_PORT" -le 65535 ]]; then
+            if is_port_occupied "$XRAY_API_PORT"; then
+                colorized_echo red "Port $XRAY_API_PORT is already in use. Please enter another port."
+            else
+                break
+            fi
         else
-            colorized_echo red "Invalid port. Please enter a port between 1 and 65535."
+            colorized_echo red "Invalid port. Please enter a port between 1024 and 65535."
         fi
     done
 
