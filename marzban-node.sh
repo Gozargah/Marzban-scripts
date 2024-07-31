@@ -802,7 +802,6 @@ usage() {
     echo
     colorized_echo magenta "  Cert file path: $CERT_FILE"
     colorized_echo magenta "  IP: $NODE_IP"
-    colorized_echo magenta "  Current port configuration:"
     DEFAULT_SERVICE_PORT="62050"
     DEFAULT_XRAY_API_PORT="62051"
     if [ -f "$COMPOSE_FILE" ]; then
@@ -811,8 +810,8 @@ usage() {
     fi
     SERVICE_PORT=${SERVICE_PORT:-$DEFAULT_SERVICE_PORT}
     XRAY_API_PORT=${XRAY_API_PORT:-$DEFAULT_XRAY_API_PORT}
-    colorized_echo magenta "  SERVICE PORT: $SERVICE_PORT"
-    colorized_echo magenta "  API PORT: $XRAY_API_PORT"
+    colorized_echo magenta "  Service port: $SERVICE_PORT"
+    colorized_echo magenta "  API port: $XRAY_API_PORT"
 
     echo
 }
