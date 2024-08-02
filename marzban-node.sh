@@ -673,60 +673,91 @@ identify_the_operating_system_and_architecture() {
 
 # Function to update the Xray core
 get_xray_core() {
-    identify_the_operating_system_and_architecture
-    # Send a request to GitHub API to get information about the latest four releases
+    clear
+
+    n
+    validate_version() {
+        local version="$1"
+        
+        local response=$(curl -s "https://api.github.com/repos/XTLS/Xray-core/releases/tags/$version")
+        if echo "$response" | grep -q '"message": "Not Found"'; then
+            echo "invalid"
+        else
+            echo "valid"
+        fi
+    }
+
+    
+    print_menu() {
+        clear
+        echo -e "\033[1;32m==============================\033[0m"
+        echo -e "\033[1;32m      Xray-core Installer     \033[0m"
+        echo -e "\033[1;32m==============================\033[0m"
+        echo -e "\033[1;33mAvailable Xray-core versions:\033[0m"
+        for ((i=0; i<${#versions[@]}; i++)); do
+            echo -e "\033[1;34m$((i + 1)):\033[0m ${versions[i]}"
+        done
+        echo -e "\033[1;32m==============================\033[0m"
+        echo -e "\033[1;35mM:\033[0m Enter a version manually"
+        echo -e "\033[1;31mQ:\033[0m Quit"
+        echo -e "\033[1;32m==============================\033[0m"
+    }
+
+
+    
     latest_releases=$(curl -s "https://api.github.com/repos/XTLS/Xray-core/releases?per_page=$LAST_XRAY_CORES")
 
-    # Extract versions from the JSON response
+    
     versions=($(echo "$latest_releases" | grep -oP '"tag_name": "\K(.*?)(?=")'))
 
-    # Print available versions
-    echo "Available Xray-core versions:"
-    for ((i=0; i<${#versions[@]}; i++)); do
-        echo "$(($i + 1)): ${versions[i]}"
+    while true; do
+        print_menu
+        read -p "Choose a version to install (1-${#versions[@]}), or press M to enter manually, Q to quit: " choice
+
+        if [[ "$choice" =~ ^[1-9][0-9]*$ ]] && [ "$choice" -le "${#versions[@]}" ]; then
+            
+            choice=$((choice - 1))
+            
+            selected_version=${versions[choice]}
+            break
+        elif [ "$choice" == "M" ] || [ "$choice" == "m" ]; then
+            while true; do
+                read -p "Enter the version manually (e.g., v1.2.3): " custom_version
+                if [ "$(validate_version "$custom_version")" == "valid" ]; then
+                    selected_version="$custom_version"
+                    break 2
+                else
+                    echo -e "\033[1;31mInvalid version or version does not exist. Please try again.\033[0m"
+                fi
+            done
+        elif [ "$choice" == "Q" ] || [ "$choice" == "q" ]; then
+            echo -e "\033[1;31mExiting.\033[0m"
+            exit 0
+        else
+            echo -e "\033[1;31mInvalid choice. Please try again.\033[0m"
+            sleep 2
+        fi
     done
 
-    # Prompt the user to choose a version
-    printf "Choose a version to install (1-${#versions[@]}), or press Enter to select the latest by default (${versions[0]}): "
-    read choice
-
-    # Check if a choice was made by the user
-    if [ -z "$choice" ]; then
-        choice="1"  # Choose the latest version by default
-    fi
-
-    # Convert the user's choice to an array index
-    choice=$((choice - 1))
-
-    # Ensure the user's choice is within available versions
-    if [ "$choice" -lt 0 ] || [ "$choice" -ge "${#versions[@]}" ]; then
-        echo "Invalid choice. The latest version (${versions[0]}) is selected by default."
-        choice=$((${#versions[@]} - 1))  # Choose the latest version by default
-    fi
-
-    # Select the version of Xray-core to install
-    selected_version=${versions[choice]}
-    echo "Selected version $selected_version for installation."
+    echo -e "\033[1;32mSelected version $selected_version for installation.\033[0m"
 
     # Check if the required packages are installed
     if ! dpkg -s unzip >/dev/null 2>&1; then
-      echo "Installing required packages..."
-      apt install -y unzip
+        echo -e "\033[1;33mInstalling required packages...\033[0m"
+        apt install -y unzip
     fi
 
-    # Create the /var/lib/marzban/xray-core folder
     mkdir -p $DATA_MAIN_DIR/xray-core
     cd $DATA_MAIN_DIR/xray-core
 
-    # Download the selected version of Xray-core
+
     xray_filename="Xray-linux-$ARCH.zip"
     xray_download_url="https://github.com/XTLS/Xray-core/releases/download/${selected_version}/${xray_filename}"
 
-    echo "Downloading Xray-core version ${selected_version}..."
+    echo -e "\033[1;33mDownloading Xray-core version ${selected_version}...\033[0m"
     wget "${xray_download_url}"
 
-    # Extract the file from the archive and delete the archive
-    echo "Extracting Xray-core..."
+    echo -e "\033[1;33mExtracting Xray-core...\033[0m"
     unzip -o "${xray_filename}"
     rm "${xray_filename}"
 }
