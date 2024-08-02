@@ -503,9 +503,7 @@ restart_command() {
 
     down_marzban_node
     up_marzban_node
-    if [ "$no_logs" = false ]; then
-        follow_marzban_node_logs
-    fi
+
 }
 
 status_command() {
@@ -673,9 +671,10 @@ identify_the_operating_system_and_architecture() {
 
 # Function to update the Xray core
 get_xray_core() {
+    identify_the_operating_system_and_architecture
     clear
 
-    n
+   
     validate_version() {
         local version="$1"
         
@@ -703,8 +702,7 @@ get_xray_core() {
         echo -e "\033[1;32m==============================\033[0m"
     }
 
-
-    
+   
     latest_releases=$(curl -s "https://api.github.com/repos/XTLS/Xray-core/releases?per_page=$LAST_XRAY_CORES")
 
     
@@ -717,7 +715,7 @@ get_xray_core() {
         if [[ "$choice" =~ ^[1-9][0-9]*$ ]] && [ "$choice" -le "${#versions[@]}" ]; then
             
             choice=$((choice - 1))
-            
+           
             selected_version=${versions[choice]}
             break
         elif [ "$choice" == "M" ] || [ "$choice" == "m" ]; then
@@ -741,24 +739,30 @@ get_xray_core() {
 
     echo -e "\033[1;32mSelected version $selected_version for installation.\033[0m"
 
-    # Check if the required packages are installed
+    
     if ! dpkg -s unzip >/dev/null 2>&1; then
         echo -e "\033[1;33mInstalling required packages...\033[0m"
-        apt install -y unzip
+        apt install -y unzip >/dev/null 2>&1 &
+        wait
     fi
 
+    
     mkdir -p $DATA_MAIN_DIR/xray-core
     cd $DATA_MAIN_DIR/xray-core
 
-
+ 
+    
     xray_filename="Xray-linux-$ARCH.zip"
     xray_download_url="https://github.com/XTLS/Xray-core/releases/download/${selected_version}/${xray_filename}"
 
-    echo -e "\033[1;33mDownloading Xray-core version ${selected_version}...\033[0m"
-    wget "${xray_download_url}"
+    echo -e "\033[1;33mDownloading Xray-core version ${selected_version} in the background...\033[0m"
+    wget "${xray_download_url}" -q &
+    wait
 
-    echo -e "\033[1;33mExtracting Xray-core...\033[0m"
-    unzip -o "${xray_filename}"
+   
+    echo -e "\033[1;33mExtracting Xray-core in the background...\033[0m"
+    unzip -o "${xray_filename}" >/dev/null 2>&1 &
+    wait
     rm "${xray_filename}"
 }
 
