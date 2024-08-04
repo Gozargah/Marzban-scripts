@@ -244,14 +244,14 @@ install_marzban_node() {
         if [[ -z "$SERVICE_PORT" ]]; then
             SERVICE_PORT=62050
         fi
-        if [[ "$SERVICE_PORT" -ge 1024 && "$SERVICE_PORT" -le 65535 ]]; then
+        if [[ "$SERVICE_PORT" -ge 1 && "$SERVICE_PORT" -le 65535 ]]; then
             if is_port_occupied "$SERVICE_PORT"; then
                 colorized_echo red "Port $SERVICE_PORT is already in use. Please enter another port."
             else
                 break
             fi
         else
-            colorized_echo red "Invalid port. Please enter a port between 1024 and 65535."
+            colorized_echo red "Invalid port. Please enter a port between 1 and 65535."
         fi
     done
     
@@ -260,7 +260,7 @@ install_marzban_node() {
         if [[ -z "$XRAY_API_PORT" ]]; then
             XRAY_API_PORT=62051
         fi
-        if [[ "$XRAY_API_PORT" -ge 1024 && "$XRAY_API_PORT" -le 65535 ]]; then
+        if [[ "$XRAY_API_PORT" -ge 1 && "$XRAY_API_PORT" -le 65535 ]]; then
             if is_port_occupied "$XRAY_API_PORT"; then
                 colorized_echo red "Port $XRAY_API_PORT is already in use. Please enter another port."
             elif [[ "$XRAY_API_PORT" -eq "$SERVICE_PORT" ]]; then
@@ -269,7 +269,7 @@ install_marzban_node() {
                 break
             fi
         else
-            colorized_echo red "Invalid port. Please enter a port between 1024 and 65535."
+            colorized_echo red "Invalid port. Please enter a port between 1 and 65535."
         fi
     done
     
