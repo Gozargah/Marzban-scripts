@@ -143,6 +143,9 @@ install_package () {
         $PKG_MANAGER install -y "$PACKAGE"
         elif [ "$OS" == "Arch" ]; then
         $PKG_MANAGER -S --noconfirm "$PACKAGE"
+        elif [[ "$OS" == "openSUSE"* ]]; then
+        PKG_MANAGER="zypper"
+        $PKG_MANAGER refresh
     else
         colorized_echo red "Unsupported operating system"
         exit 1

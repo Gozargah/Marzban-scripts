@@ -72,6 +72,9 @@ detect_and_update_package_manager() {
         elif [ "$OS" == "Arch" ]; then
         PKG_MANAGER="pacman"
         $PKG_MANAGER -Sy
+        elif [[ "$OS" == "openSUSE"* ]]; then
+        PKG_MANAGER="zypper"
+        $PKG_MANAGER refresh
     else
         colorized_echo red "Unsupported operating system"
         exit 1
