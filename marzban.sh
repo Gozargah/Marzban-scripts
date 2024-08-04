@@ -272,7 +272,7 @@ install_command() {
     check_version_exists() {
         local version=$1
         repo_url="https://api.github.com/repos/Gozargah/Marzban/releases"
-        if [ "$version" == "latest" ]; then
+        if [ "$version" == "latest" ] || [ "$version" == "dev" ]; then
             return 0
         fi
 
@@ -287,7 +287,7 @@ install_command() {
         fi
     }
     # Check if the version is valid and exists
-    if [[ "$1" == "latest" || "$1" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    if [[ "$1" == "latest" || "$1" == "latest" || "$1" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
         if check_version_exists "$1"; then
                 install_marzban "$1"
             echo "Installing $1 version"
