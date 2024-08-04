@@ -174,7 +174,7 @@ install_marzban_node_script() {
 get_occupied_ports() {
     if command -v ss &> /dev/null; then
         OCCUPIED_PORTS=$(ss -tuln | awk '{print $5}' | grep -Eo '[0-9]+$' | sort | uniq)
-        elif command -v netstat &> /dev/null; then
+    elif command -v netstat &> /dev/null; then
         OCCUPIED_PORTS=$(netstat -tuln | awk '{print $4}' | grep -Eo '[0-9]+$' | sort | uniq)
     else
         colorized_echo yellow "Neither ss nor netstat found. Attempting to install net-tools."
@@ -192,12 +192,11 @@ get_occupied_ports() {
 # Function to check if a port is occupied
 is_port_occupied() {
     if echo "$OCCUPIED_PORTS" | grep -q -w "$1"; then
-        return 1
-    else
         return 0
+    else
+        return 1
     fi
 }
-
 
 install_marzban_node() {
     # Fetch releases
@@ -218,14 +217,12 @@ install_marzban_node() {
     # Prompt the user to input the certificate
     echo -e "Please paste the content of the Client Certificate, press ENTER on a new line when finished: "
     
-    
     while IFS= read -r line; do
         if [[ -z $line ]]; then
             break
         fi
         echo "$line" >> "$CERT_FILE"
     done
-    
     
     print_info "Certificate saved to $CERT_FILE"
     
@@ -266,6 +263,8 @@ install_marzban_node() {
         if [[ "$XRAY_API_PORT" -ge 1024 && "$XRAY_API_PORT" -le 65535 ]]; then
             if is_port_occupied "$XRAY_API_PORT"; then
                 colorized_echo red "Port $XRAY_API_PORT is already in use. Please enter another port."
+            elif [[ "$XRAY_API_PORT" -eq "$SERVICE_PORT" ]]; then
+                colorized_echo red "Port $XRAY_API_PORT cannot be the same as SERVICE_PORT. Please enter another port."
             else
                 break
             fi
