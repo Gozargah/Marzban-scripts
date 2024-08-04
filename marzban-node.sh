@@ -783,10 +783,11 @@ update_core_command() {
     fi
 
     # Check if the /var/lib/marzban:/var/lib/marzban string already exists in the docker-compose.yml file
-    if ! grep -q "^\s*- $DATA_MAIN_DIR:/var/lib/marzban\s*$" "$COMPOSE_FILE"; then
+    if ! grep -q "^\s*- ${DATA_MAIN_DIR}:/var/lib/marzban\s*$" "$COMPOSE_FILE"; then
         # If the string does not exist, add it
-        sed -i '/volumes:/!b;n;/^- $DATA_MAIN_DIR:\/var\/lib\/marzban/!a\      - $DATA_MAIN_DIR:\/var\/lib\/marzban' "$COMPOSE_FILE"
+        sed -i "/volumes:/!b;n;/^- ${DATA_MAIN_DIR}:\/var\/lib\/marzban/!a\      - ${DATA_MAIN_DIR}:\/var\/lib\/marzban" "$COMPOSE_FILE"
     fi
+
 
     # Restart Marzban-node
     colorized_echo red "Restarting Marzban-node..."
