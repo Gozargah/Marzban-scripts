@@ -37,6 +37,11 @@ fi
 if [[ "$COMMAND" == "install" || "$COMMAND" == "install-script" ]] && [ -z "$NODE_NAME" ]; then
     NODE_NAME="marzban-node"
 fi
+# Set APP_NAME to NODE_NAME, or script name if NODE_NAME is not set
+if [ -z "$NODE_NAME" ]; then
+    SCRIPT_NAME=$(basename "$0")
+    NODE_NAME="${SCRIPT_NAME%.*}"
+fi
 
 APP_NAME=$NODE_NAME
 INSTALL_DIR="/opt"
