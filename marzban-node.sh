@@ -12,7 +12,7 @@ while [[ $# -gt 0 ]]; do
         ;;
         --name)
             if [[ "$COMMAND" == "install" || "$COMMAND" == "install-script" ]]; then
-                NODE_NAME="$2"
+                APP_NAME="$2"
                 shift # past argument
             else
                 echo "Error: --name parameter is only allowed with 'install' or 'install-script' commands."
@@ -34,16 +34,15 @@ if [ -z "$NODE_IP" ]; then
     NODE_IP=$(curl -s -6 ifconfig.io)
 fi
 
-if [[ "$COMMAND" == "install" || "$COMMAND" == "install-script" ]] && [ -z "$NODE_NAME" ]; then
-    NODE_NAME="marzban-node"
+if [[ "$COMMAND" == "install" || "$COMMAND" == "install-script" ]] && [ -z "$APP_NAME" ]; then
+    APP_NAME="marzban-node"
 fi
-# Set APP_NAME to NODE_NAME, or script name if NODE_NAME is not set
-if [ -z "$NODE_NAME" ]; then
+# Set script name if APP_NAME is not set
+if [ -z "$APP_NAME" ]; then
     SCRIPT_NAME=$(basename "$0")
-    NODE_NAME="${SCRIPT_NAME%.*}"
+    APP_NAME="${SCRIPT_NAME%.*}"
 fi
 
-APP_NAME=$NODE_NAME
 INSTALL_DIR="/opt"
 APP_DIR="$INSTALL_DIR/$APP_NAME"
 DATA_DIR="/var/lib/$APP_NAME"
@@ -284,7 +283,7 @@ install_marzban_node() {
     cat > "$COMPOSE_FILE" <<EOL
 services:
   marzban-node:
-    container_name: $NODE_NAME
+    container_name: $APP_NAME
     image: gozargah/marzban-node:latest
     restart: always
     network_mode: host
