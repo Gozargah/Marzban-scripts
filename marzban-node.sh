@@ -12,7 +12,7 @@ while [[ $# -gt 0 ]]; do
         ;;
         --name)
             if [[ "$COMMAND" == "install" || "$COMMAND" == "install-script" ]]; then
-                NODE_NAME="$2"
+                APP_NAME="$2"
                 shift # past argument
             else
                 echo "Error: --name parameter is only allowed with 'install' or 'install-script' commands."
@@ -34,11 +34,15 @@ if [ -z "$NODE_IP" ]; then
     NODE_IP=$(curl -s -6 ifconfig.io)
 fi
 
-if [[ "$COMMAND" == "install" || "$COMMAND" == "install-script" ]] && [ -z "$NODE_NAME" ]; then
-    NODE_NAME="marzban-node"
+if [[ "$COMMAND" == "install" || "$COMMAND" == "install-script" ]] && [ -z "$APP_NAME" ]; then
+    APP_NAME="marzban-node"
+fi
+# Set script name if APP_NAME is not set
+if [ -z "$APP_NAME" ]; then
+    SCRIPT_NAME=$(basename "$0")
+    APP_NAME="${SCRIPT_NAME%.*}"
 fi
 
-APP_NAME=$NODE_NAME
 INSTALL_DIR="/opt"
 APP_DIR="$INSTALL_DIR/$APP_NAME"
 DATA_DIR="/var/lib/$APP_NAME"
@@ -174,7 +178,7 @@ install_marzban_node_script() {
 get_occupied_ports() {
     if command -v ss &> /dev/null; then
         OCCUPIED_PORTS=$(ss -tuln | awk '{print $5}' | grep -Eo '[0-9]+$' | sort | uniq)
-        elif command -v netstat &> /dev/null; then
+    elif command -v netstat &> /dev/null; then
         OCCUPIED_PORTS=$(netstat -tuln | awk '{print $4}' | grep -Eo '[0-9]+$' | sort | uniq)
     else
         colorized_echo yellow "Neither ss nor netstat found. Attempting to install net-tools."
@@ -192,12 +196,11 @@ get_occupied_ports() {
 # Function to check if a port is occupied
 is_port_occupied() {
     if echo "$OCCUPIED_PORTS" | grep -q -w "$1"; then
-        return 1
-    else
         return 0
+    else
+        return 1
     fi
 }
-
 
 install_marzban_node() {
     # Fetch releases
@@ -218,14 +221,12 @@ install_marzban_node() {
     # Prompt the user to input the certificate
     echo -e "Please paste the content of the Client Certificate, press ENTER on a new line when finished: "
     
-    
     while IFS= read -r line; do
         if [[ -z $line ]]; then
             break
         fi
         echo "$line" >> "$CERT_FILE"
     done
-    
     
     print_info "Certificate saved to $CERT_FILE"
     
@@ -247,14 +248,14 @@ install_marzban_node() {
         if [[ -z "$SERVICE_PORT" ]]; then
             SERVICE_PORT=62050
         fi
-        if [[ "$SERVICE_PORT" -ge 1024 && "$SERVICE_PORT" -le 65535 ]]; then
+        if [[ "$SERVICE_PORT" -ge 1 && "$SERVICE_PORT" -le 65535 ]]; then
             if is_port_occupied "$SERVICE_PORT"; then
                 colorized_echo red "Port $SERVICE_PORT is already in use. Please enter another port."
             else
                 break
             fi
         else
-            colorized_echo red "Invalid port. Please enter a port between 1024 and 65535."
+            colorized_echo red "Invalid port. Please enter a port between 1 and 65535."
         fi
     done
     
@@ -263,14 +264,16 @@ install_marzban_node() {
         if [[ -z "$XRAY_API_PORT" ]]; then
             XRAY_API_PORT=62051
         fi
-        if [[ "$XRAY_API_PORT" -ge 1024 && "$XRAY_API_PORT" -le 65535 ]]; then
+        if [[ "$XRAY_API_PORT" -ge 1 && "$XRAY_API_PORT" -le 65535 ]]; then
             if is_port_occupied "$XRAY_API_PORT"; then
                 colorized_echo red "Port $XRAY_API_PORT is already in use. Please enter another port."
+            elif [[ "$XRAY_API_PORT" -eq "$SERVICE_PORT" ]]; then
+                colorized_echo red "Port $XRAY_API_PORT cannot be the same as SERVICE_PORT. Please enter another port."
             else
                 break
             fi
         else
-            colorized_echo red "Invalid port. Please enter a port between 1024 and 65535."
+            colorized_echo red "Invalid port. Please enter a port between 1 and 65535."
         fi
     done
     
@@ -280,7 +283,7 @@ install_marzban_node() {
     cat > "$COMPOSE_FILE" <<EOL
 services:
   marzban-node:
-    container_name: $NODE_NAME
+    container_name: $APP_NAME
     image: gozargah/marzban-node:latest
     restart: always
     network_mode: host
