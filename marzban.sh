@@ -960,11 +960,12 @@ edit_env_command() {
 }
 
 usage() {
+    local script_name="${0##*/}"
     colorized_echo blue "=============================="
     colorized_echo magenta "           Marzban Help"
     colorized_echo blue "=============================="
     colorized_echo cyan "Usage:"
-    echo "  marzban [command]"
+    echo "  ${script_name} [command]"
     echo
 
     colorized_echo cyan "Commands:"
