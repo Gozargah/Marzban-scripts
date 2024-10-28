@@ -57,6 +57,14 @@ detect_os() {
     fi
 }
 
+# Fetch IP address from ipinfo.io API
+SERVER_IP=$(curl -s -4 ifconfig.io)
+
+# If the IPv4 retrieval is empty, attempt to retrieve the IPv6 address
+if [ -z "$SERVER_IP" ]; then
+    SERVER_IP=$(curl -s -6 ifconfig.io)
+fi
+
 detect_and_update_package_manager() {
     colorized_echo blue "Updating package manager"
     if [[ "$OS" == "Ubuntu"* ]] || [[ "$OS" == "Debian"* ]]; then
@@ -921,48 +929,102 @@ update_marzban() {
     $COMPOSE -f $COMPOSE_FILE -p "$APP_NAME" pull
 }
 
-usage() {
-    colorized_echo red "Usage: marzban [command]"
-    echo
-    echo "Commands:"
-    echo "  up              Start services"
-    echo "  down            Stop services"
-    echo "  restart         Restart services"
-    echo "  status          Show status"
-    echo "  logs            Show logs"
-    echo "  cli             Marzban CLI"
-    echo "  install         Install Marzban"
-    echo "  update          Update latest version"
-    echo "  uninstall       Uninstall Marzban"
-    echo "  install-script  Install Marzban script"
-    echo "  core-update     Update/Change Xray core"
-    echo
+check_editor() {
+    if [ -z "$EDITOR" ]; then
+        if command -v nano >/dev/null 2>&1; then
+            EDITOR="nano"
+            elif command -v vi >/dev/null 2>&1; then
+            EDITOR="vi"
+        else
+            detect_os
+            install_package nano
+            EDITOR="nano"
+        fi
+    fi
 }
 
 
+edit_command() {
+    detect_os
+    check_editor
+    if [ -f "$COMPOSE_FILE" ]; then
+        $EDITOR "$COMPOSE_FILE"
+    else
+        colorized_echo red "Compose file not found at $COMPOSE_FILE"
+        exit 1
+    fi
+}
+
+edit_env_command() {
+    detect_os
+    check_editor
+    if [ -f "$ENV_FILE" ]; then
+        $EDITOR "$ENV_FILE"
+    else
+        colorized_echo red "Environment file not found at $ENV_FILE"
+        exit 1
+    fi
+}
+
+usage() {
+    colorized_echo blue "=============================="
+    colorized_echo magenta "           Marzban CLI Help"
+    colorized_echo blue "=============================="
+    colorized_echo cyan "Usage:"
+    echo "  marzban [command]"
+    echo
+
+    colorized_echo cyan "Commands:"
+    colorized_echo yellow "  up              $(tput sgr0)– Start services"
+    colorized_echo yellow "  down            $(tput sgr0)– Stop services"
+    colorized_echo yellow "  restart         $(tput sgr0)– Restart services"
+    colorized_echo yellow "  status          $(tput sgr0)– Show status"
+    colorized_echo yellow "  logs            $(tput sgr0)– Show logs"
+    colorized_echo yellow "  cli             $(tput sgr0)– Marzban CLI"
+    colorized_echo yellow "  install         $(tput sgr0)– Install Marzban"
+    colorized_echo yellow "  update          $(tput sgr0)– Update to latest version"
+    colorized_echo yellow "  uninstall       $(tput sgr0)– Uninstall Marzban"
+    colorized_echo yellow "  install-script  $(tput sgr0)– Install Marzban script"
+    colorized_echo yellow "  core-update     $(tput sgr0)– Update/Change Xray core"
+    colorized_echo yellow "  edit            $(tput sgr0)– Edit docker-compose.yml (via nano or vi editor)"
+    colorized_echo yellow "  edit-env        $(tput sgr0)– Edit environment file (via nano or vi editor)"
+    colorized_echo yellow "  help            $(tput sgr0)– Show this help message"
+    
+    echo
+    colorized_echo cyan "Directories:"
+    colorized_echo magenta "  App directory: $APP_DIR"
+    colorized_echo magenta "  Data directory: $DATA_DIR"
+    colorized_echo blue "================================"
+    echo
+}
+
 case "$1" in
     up)
-    shift; up_command "$@";;
+        shift; up_command "$@";;
     down)
-    shift; down_command "$@";;
+        shift; down_command "$@";;
     restart)
-    shift; restart_command "$@";;
+        shift; restart_command "$@";;
     status)
-    shift; status_command "$@";;
+        shift; status_command "$@";;
     logs)
-    shift; logs_command "$@";;
+        shift; logs_command "$@";;
     cli)
-    shift; cli_command "$@";;
+        shift; cli_command "$@";;
     install)
-    shift; install_command "$@";;
+        shift; install_command "$@";;
     update)
-    shift; update_command "$@";;
+        shift; update_command "$@";;
     uninstall)
-    shift; uninstall_command "$@";;
+        shift; uninstall_command "$@";;
     install-script)
-    shift; install_marzban_script "$@";;
+        shift; install_marzban_script "$@";;
     core-update)
-    shift; update_core_command "$@";;
-    *)
-    usage;;
+        shift; update_core_command "$@";;
+    edit)
+        shift; edit_command "$@";;
+    edit-env)
+        shift; edit_env_command "$@";;
+    help|*)
+        usage;;
 esac
