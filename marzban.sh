@@ -961,7 +961,7 @@ edit_env_command() {
 
 usage() {
     colorized_echo blue "=============================="
-    colorized_echo magenta "           Marzban CLI Help"
+    colorized_echo magenta "           Marzban Help"
     colorized_echo blue "=============================="
     colorized_echo cyan "Usage:"
     echo "  marzban [command]"
