@@ -57,13 +57,6 @@ detect_os() {
     fi
 }
 
-# Fetch IP address from ipinfo.io API
-SERVER_IP=$(curl -s -4 ifconfig.io)
-
-# If the IPv4 retrieval is empty, attempt to retrieve the IPv6 address
-if [ -z "$SERVER_IP" ]; then
-    SERVER_IP=$(curl -s -6 ifconfig.io)
-fi
 
 detect_and_update_package_manager() {
     colorized_echo blue "Updating package manager"
