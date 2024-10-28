@@ -864,35 +864,46 @@ edit_command() {
 
 
 usage() {
+    colorized_echo blue "================================"
+    colorized_echo magenta "       $APP_NAME Node CLI Help"
+    colorized_echo blue "================================"
+    colorized_echo cyan "Usage:"
+    echo "  $APP_NAME [command]"
+    echo
+
+    colorized_echo cyan "Commands:"
+    colorized_echo yellow "  up              $(tput sgr0)– Start services"
+    colorized_echo yellow "  down            $(tput sgr0)– Stop services"
+    colorized_echo yellow "  restart         $(tput sgr0)– Restart services"
+    colorized_echo yellow "  status          $(tput sgr0)– Show status"
+    colorized_echo yellow "  logs            $(tput sgr0)– Show logs"
+    colorized_echo yellow "  install         $(tput sgr0)– Install/reinstall Marzban-node"
+    colorized_echo yellow "  update          $(tput sgr0)– Update to latest version"
+    colorized_echo yellow "  uninstall       $(tput sgr0)– Uninstall Marzban-node"
+    colorized_echo yellow "  install-script  $(tput sgr0)– Install Marzban-node script"
+    colorized_echo yellow "  edit            $(tput sgr0)– Edit docker-compose.yml (via nano or vi)"
+    colorized_echo yellow "  core-update     $(tput sgr0)– Update/Change Xray core"
     
-    colorized_echo red "Usage: $APP_NAME [command]"
     echo
-    echo "Commands:"
-    echo "  up              Start services"
-    echo "  down            Stop services"
-    echo "  restart         Restart services"
-    echo "  status          Show status"
-    echo "  logs            Show logs"
-    echo "  install         Install/reinstall Marzban-node"
-    echo "  update          Update latest version"
-    echo "  uninstall       Uninstall Marzban-node"
-    echo "  install-script  Install Marzban-node script"
-    echo "  edit            edit docker-compose.yml (via nano or vi editor)"
-    echo "  core-update     Update/Change Xray core"
-    echo
+    colorized_echo cyan "Node Information:"
     colorized_echo magenta "  Cert file path: $CERT_FILE"
-    colorized_echo magenta "  IP: $NODE_IP"
+    colorized_echo magenta "  Node IP: $NODE_IP"
+
     DEFAULT_SERVICE_PORT="62050"
     DEFAULT_XRAY_API_PORT="62051"
+    
     if [ -f "$COMPOSE_FILE" ]; then
         SERVICE_PORT=$(awk -F': ' '/SERVICE_PORT:/ {gsub(/"/, "", $2); print $2}' "$COMPOSE_FILE")
         XRAY_API_PORT=$(awk -F': ' '/XRAY_API_PORT:/ {gsub(/"/, "", $2); print $2}' "$COMPOSE_FILE")
     fi
+    
     SERVICE_PORT=${SERVICE_PORT:-$DEFAULT_SERVICE_PORT}
     XRAY_API_PORT=${XRAY_API_PORT:-$DEFAULT_XRAY_API_PORT}
+
+    colorized_echo cyan "Ports:"
     colorized_echo magenta "  Service port: $SERVICE_PORT"
     colorized_echo magenta "  API port: $XRAY_API_PORT"
-    
+    colorized_echo blue "================================="
     echo
 }
 
