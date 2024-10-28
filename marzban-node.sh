@@ -133,23 +133,23 @@ detect_compose() {
 }
 
 install_package () {
-    if [ -z $PKG_MANAGER ]; then
+    if [ -z "$PKG_MANAGER" ]; then
         detect_and_update_package_manager
     fi
-    
+
     PACKAGE=$1
     colorized_echo blue "Installing $PACKAGE"
     if [[ "$OS" == "Ubuntu"* ]] || [[ "$OS" == "Debian"* ]]; then
-        $PKG_MANAGER -y install "$PACKAGE"
-        elif [[ "$OS" == "CentOS"* ]] || [[ "$OS" == "AlmaLinux"* ]]; then
-        $PKG_MANAGER install -y "$PACKAGE"
-        elif [ "$OS" == "Fedora"* ]; then
-        $PKG_MANAGER install -y "$PACKAGE"
-        elif [ "$OS" == "Arch" ]; then
-        $PKG_MANAGER -S --noconfirm "$PACKAGE"
-        elif [[ "$OS" == "openSUSE"* ]]; then
+        $PKG_MANAGER -y -qq install "$PACKAGE" >/dev/null
+    elif [[ "$OS" == "CentOS"* ]] || [[ "$OS" == "AlmaLinux"* ]]; then
+        $PKG_MANAGER install -y -q "$PACKAGE" >/dev/null
+    elif [[ "$OS" == "Fedora"* ]]; then
+        $PKG_MANAGER install -y -q "$PACKAGE" >/dev/null
+    elif [[ "$OS" == "Arch"* ]]; then
+        $PKG_MANAGER -S --noconfirm --quiet "$PACKAGE" >/dev/null
+    elif [[ "$OS" == "openSUSE"* ]]; then
         PKG_MANAGER="zypper"
-        $PKG_MANAGER refresh
+        $PKG_MANAGER --quiet install -y "$PACKAGE" >/dev/null
     else
         colorized_echo red "Unsupported operating system"
         exit 1
@@ -787,8 +787,7 @@ get_xray_core() {
     
     if ! dpkg -s unzip >/dev/null 2>&1; then
         echo -e "\033[1;33mInstalling required packages...\033[0m"
-        apt install -y unzip >/dev/null 2>&1 &
-        wait
+    install_package unzip
     fi
     
     
