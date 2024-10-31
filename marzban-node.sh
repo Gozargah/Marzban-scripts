@@ -789,11 +789,12 @@ get_xray_core() {
     echo -e "\033[1;32mSelected version $selected_version for installation.\033[0m"
     
     
-    if ! dpkg -s unzip >/dev/null 2>&1; then
-        echo -e "\033[1;33mInstalling required packages...\033[0m"
-        detect_os
+if ! dpkg -s unzip >/dev/null 2>&1; then
+    echo -e "\033[1;33mInstalling required packages...\033[0m"
+    detect_os
     install_package unzip
-    fi
+fi
+
     
     
     mkdir -p $DATA_MAIN_DIR/xray-core
