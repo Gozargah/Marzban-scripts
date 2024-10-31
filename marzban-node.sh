@@ -144,16 +144,16 @@ install_package () {
     PACKAGE=$1
     colorized_echo blue "Installing $PACKAGE"
     if [[ "$OS" == "Ubuntu"* ]] || [[ "$OS" == "Debian"* ]]; then
-        $PKG_MANAGER -y -qq install "$PACKAGE" >/dev/null
+        $PKG_MANAGER -y -qq install "$PACKAGE" >/dev/null 2>&1
     elif [[ "$OS" == "CentOS"* ]] || [[ "$OS" == "AlmaLinux"* ]]; then
-        $PKG_MANAGER install -y -q "$PACKAGE" >/dev/null
+        $PKG_MANAGER install -y -q "$PACKAGE" >/dev/null 2>&1
     elif [[ "$OS" == "Fedora"* ]]; then
-        $PKG_MANAGER install -y -q "$PACKAGE" >/dev/null
+        $PKG_MANAGER install -y -q "$PACKAGE" >/dev/null 2>&1
     elif [[ "$OS" == "Arch"* ]]; then
-        $PKG_MANAGER -S --noconfirm --quiet "$PACKAGE" >/dev/null
+        $PKG_MANAGER -S --noconfirm --quiet "$PACKAGE" >/dev/null 2>&1
     elif [[ "$OS" == "openSUSE"* ]]; then
         PKG_MANAGER="zypper"
-        $PKG_MANAGER --quiet install -y "$PACKAGE" >/dev/null
+        $PKG_MANAGER --quiet install -y "$PACKAGE" >/dev/null 2>&1
     else
         colorized_echo red "Unsupported operating system"
         exit 1
