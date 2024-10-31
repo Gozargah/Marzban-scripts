@@ -787,6 +787,7 @@ get_xray_core() {
     
     if ! dpkg -s unzip >/dev/null 2>&1; then
         echo -e "\033[1;33mInstalling required packages...\033[0m"
+        detect_os
     install_package unzip
     fi
     
