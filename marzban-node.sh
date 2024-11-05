@@ -902,8 +902,6 @@ usage() {
     echo
 }
 
-echo "Received command: $COMMAND"
-
 case "$COMMAND" in
 install)
     install_command
