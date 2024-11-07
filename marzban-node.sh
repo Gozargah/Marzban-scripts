@@ -6,7 +6,7 @@ while [[ $# -gt 0 ]]; do
     key="$1"
     
     case $key in
-        install|update|uninstall|up|down|restart|status|logs|core-update|install-script|edit)
+        install|update|uninstall|up|down|restart|status|logs|core-update|install-script|uninstall-script|edit)
             COMMAND="$1"
             shift # past argument
         ;;
@@ -44,7 +44,15 @@ if [ -z "$APP_NAME" ]; then
 fi
 
 INSTALL_DIR="/opt"
-APP_DIR="$INSTALL_DIR/$APP_NAME"
+
+if [ -d "$INSTALL_DIR/$APP_NAME" ]; then
+    APP_DIR="$INSTALL_DIR/$APP_NAME"
+elif [ -d "$INSTALL_DIR/Marzban-node" ]; then
+    APP_DIR="$INSTALL_DIR/Marzban-node"
+else
+    APP_DIR="$INSTALL_DIR/$APP_NAME"
+fi
+
 DATA_DIR="/var/lib/$APP_NAME"
 DATA_MAIN_DIR="/var/lib/$APP_NAME"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
@@ -180,15 +188,15 @@ install_marzban_node_script() {
 
 # Get a list of occupied ports
 get_occupied_ports() {
-    if command -v ss &> /dev/null; then
+    if command -v ss &>/dev/null; then
         OCCUPIED_PORTS=$(ss -tuln | awk '{print $5}' | grep -Eo '[0-9]+$' | sort | uniq)
-    elif command -v netstat &> /dev/null; then
+    elif command -v netstat &>/dev/null; then
         OCCUPIED_PORTS=$(netstat -tuln | awk '{print $4}' | grep -Eo '[0-9]+$' | sort | uniq)
     else
         colorized_echo yellow "Neither ss nor netstat found. Attempting to install net-tools."
         detect_os
         install_package net-tools
-        if command -v netstat &> /dev/null; then
+        if command -v netstat &>/dev/null; then
             OCCUPIED_PORTS=$(netstat -tuln | awk '{print $4}' | grep -Eo '[0-9]+$' | sort | uniq)
         else
             colorized_echo red "Failed to install net-tools. Please install it manually."
@@ -214,7 +222,7 @@ install_marzban_node() {
     
     # Проверка на существование файла перед его очисткой
     if [ -f "$CERT_FILE" ]; then
-        > "$CERT_FILE"
+        >"$CERT_FILE"
     fi
     
     # Function to print information to the user
@@ -229,7 +237,7 @@ install_marzban_node() {
         if [[ -z $line ]]; then
             break
         fi
-        echo "$line" >> "$CERT_FILE"
+        echo "$line" >>"$CERT_FILE"
     done
     
     print_info "Certificate saved to $CERT_FILE"
@@ -820,25 +828,27 @@ fi
 update_core_command() {
     check_running_as_root
     get_xray_core
-    # Change the Marzban-node core
-    echo "Changing the Marzban-node core..."
-    # Check if the XRAY_EXECUTABLE_PATH string already exists in the docker-compose.yml file
-    if ! grep -q "XRAY_EXECUTABLE_PATH: \"/var/lib/marzban/xray-core/xray\"" "$COMPOSE_FILE"; then
-        # If the string does not exist, add it
-        sed -i '/environment:/!b;n;/XRAY_EXECUTABLE_PATH/!a\      XRAY_EXECUTABLE_PATH: "/var/lib/marzban/xray-core/xray"' "$COMPOSE_FILE"
+    # Check if yq is installed, and install it if not
+    if ! command -v yq &>/dev/null; then
+        echo "yq is not installed. Installing yq..."
+        sudo wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+        sudo chmod +x /usr/local/bin/yq
     fi
-    
-    # Check if the /var/lib/marzban:/var/lib/marzban string already exists in the docker-compose.yml file
-    if ! grep -q "^\s*- ${DATA_MAIN_DIR}:/var/lib/marzban\s*$" "$COMPOSE_FILE"; then
-        # If the string does not exist, add it
-        sed -i "/volumes:/!b;n;/^- ${DATA_MAIN_DIR}:\/var\/lib\/marzban/!a\      - ${DATA_MAIN_DIR}:\/var\/lib\/marzban" "$COMPOSE_FILE"
+
+    # Add XRAY_EXECUTABLE_PATH to the environment section if it doesn't exist
+    if ! grep -q 'XRAY_EXECUTABLE_PATH: "/var/lib/marzban-node/xray-core/xray"' "$COMPOSE_FILE"; then
+        yq eval '.services."marzban-node".environment.XRAY_EXECUTABLE_PATH = "/var/lib/marzban-node/xray-core/xray"' -i "$COMPOSE_FILE"
     fi
-    
+
+    # Add volume for marzban-node if it doesn't already exist
+    if ! yq eval ".services.\"marzban-node\".volumes[] | select(. == \"${DATA_MAIN_DIR}:/var/lib/marzban-node\")" "$COMPOSE_FILE" &>/dev/null; then
+        yq eval ".services.\"marzban-node\".volumes += \"${DATA_MAIN_DIR}:/var/lib/marzban-node\"" -i "$COMPOSE_FILE"
+    fi
     
     # Restart Marzban-node
     colorized_echo red "Restarting Marzban-node..."
     $APP_NAME restart -n
-    colorized_echo blue "Installation XRAY-CORE version $selected_version completed."
+    colorized_echo blue "Installation of XRAY-CORE version $selected_version completed."
 }
 
 
@@ -887,6 +897,7 @@ usage() {
     colorized_echo yellow "  update          $(tput sgr0)– Update to latest version"
     colorized_echo yellow "  uninstall       $(tput sgr0)– Uninstall Marzban-node"
     colorized_echo yellow "  install-script  $(tput sgr0)– Install Marzban-node script"
+    colorized_echo yellow "  uninstall-script  $(tput sgr0)– Uninstall Marzban-node script"
     colorized_echo yellow "  edit            $(tput sgr0)– Edit docker-compose.yml (via nano or vi)"
     colorized_echo yellow "  core-update     $(tput sgr0)– Update/Change Xray core"
     
@@ -943,6 +954,9 @@ case "$COMMAND" in
     ;;
     install-script)
         install_marzban_node_script
+    ;;
+    uninstall-script)
+        uninstall_marzban_node_script
     ;;
     edit)
         edit_command
