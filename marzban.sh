@@ -9,7 +9,7 @@ APP_DIR="$INSTALL_DIR/$APP_NAME"
 DATA_DIR="/var/lib/$APP_NAME"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
 ENV_FILE="$APP_DIR/.env"
-LAST_XRAY_CORES=5
+LAST_XRAY_CORES=10
 
 colorized_echo() {
     local color=$1
