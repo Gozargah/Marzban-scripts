@@ -429,7 +429,7 @@ services:
         condition: service_healthy
 
   mysql:
-    image: mysql:8.3
+    image: mysql:lts
     env_file: .env
     network_mode: host
     restart: always
