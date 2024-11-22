@@ -824,23 +824,85 @@ fi
     rm "${xray_filename}"
 }
 
-# Function to update the Marzban-node Main core
+install_yq() {
+    if command -v yq &>/dev/null; then
+        return
+    fi
+
+    identify_the_operating_system_and_architecture
+
+    local base_url="https://github.com/mikefarah/yq/releases/latest/download"
+    local yq_binary=""
+    case "$(uname)" in
+        "Linux")
+            case "$ARCH" in
+                '64')
+                    yq_binary="yq_linux_amd64"
+                ;;
+                'arm32-v7a' | 'arm32-v6' | 'arm32-v5')
+                    yq_binary="yq_linux_arm"
+                ;;
+                'arm64-v8a')
+                    yq_binary="yq_linux_arm64"
+                ;;
+                'ppc64le')
+                    yq_binary="yq_linux_ppc64le"
+                ;;
+                's390x')
+                    yq_binary="yq_linux_s390x"
+                ;;
+                *)
+                    echo "Error: Unsupported architecture for Linux: $ARCH" >&2
+                    exit 1
+                ;;
+            esac
+        ;;
+        "Darwin")
+            case "$ARCH" in
+                '64')
+                    yq_binary="yq_darwin_amd64"
+                ;;
+                'arm64-v8a')
+                    yq_binary="yq_darwin_arm64"
+                ;;
+                *)
+                    echo "Error: Unsupported architecture for macOS: $ARCH" >&2
+                    exit 1
+                ;;
+            esac
+        ;;
+        *)
+            echo "Error: Unsupported operating system: $(uname)" >&2
+            exit 1
+        ;;
+    esac
+
+    local yq_url="$base_url/$yq_binary"
+    sudo wget -q -O /usr/local/bin/yq "$yq_url" 2>/dev/null && \
+    sudo chmod +x /usr/local/bin/yq 2>/dev/null
+    if command -v yq &>/dev/null; then
+        return
+    else
+        echo "Error: Failed to install yq. Please check your setup." >&2
+        exit 1
+    fi
+}
+
+
 update_core_command() {
     check_running_as_root
     get_xray_core
-    # Check if yq is installed, and install it if not
+
     if ! command -v yq &>/dev/null; then
         echo "yq is not installed. Installing yq..."
-        sudo wget -O /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-        sudo chmod +x /usr/local/bin/yq
+        install_yq
     fi
 
-    # Add XRAY_EXECUTABLE_PATH to the environment section if it doesn't exist
+
     if ! grep -q 'XRAY_EXECUTABLE_PATH: "/var/lib/marzban-node/xray-core/xray"' "$COMPOSE_FILE"; then
         yq eval '.services."marzban-node".environment.XRAY_EXECUTABLE_PATH = "/var/lib/marzban-node/xray-core/xray"' -i "$COMPOSE_FILE"
     fi
 
-    # Add volume for marzban-node if it doesn't already exist
     if ! yq eval ".services.\"marzban-node\".volumes[] | select(. == \"${DATA_MAIN_DIR}:/var/lib/marzban-node\")" "$COMPOSE_FILE" &>/dev/null; then
         yq eval ".services.\"marzban-node\".volumes += \"${DATA_MAIN_DIR}:/var/lib/marzban-node\"" -i "$COMPOSE_FILE"
     fi
