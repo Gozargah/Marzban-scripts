@@ -719,6 +719,7 @@ install_yq() {
     identify_the_operating_system_and_architecture
     local base_url="https://github.com/mikefarah/yq/releases/latest/download"
     local yq_binary=""
+
     case "$(uname)" in
         "Linux")
             case "$ARCH" in
@@ -731,28 +732,11 @@ install_yq() {
                 'arm64-v8a')
                     yq_binary="yq_linux_arm64"
                 ;;
-                'ppc64le')
-                    yq_binary="yq_linux_ppc64le"
-                ;;
-                's390x')
-                    yq_binary="yq_linux_s390x"
+                '386')
+                    yq_binary="yq_linux_386"
                 ;;
                 *)
                     echo "Error: Unsupported architecture for Linux: $ARCH" >&2
-                    exit 1
-                ;;
-            esac
-        ;;
-        "Darwin")
-            case "$ARCH" in
-                '64')
-                    yq_binary="yq_darwin_amd64"
-                ;;
-                'arm64-v8a')
-                    yq_binary="yq_darwin_arm64"
-                ;;
-                *)
-                    echo "Error: Unsupported architecture for macOS: $ARCH" >&2
                     exit 1
                 ;;
             esac
@@ -762,6 +746,7 @@ install_yq() {
             exit 1
         ;;
     esac
+
     local yq_url="$base_url/$yq_binary"
     sudo wget -q -O /usr/local/bin/yq "$yq_url" 2>/dev/null && \
     sudo chmod +x /usr/local/bin/yq 2>/dev/null
@@ -772,6 +757,7 @@ install_yq() {
         exit 1
     fi
 }
+
 
 down_marzban() {
     $COMPOSE -f $COMPOSE_FILE -p "$APP_NAME" down
