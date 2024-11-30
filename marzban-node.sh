@@ -963,6 +963,7 @@ usage() {
     current_version=$(get_current_xray_core_version)
     colorized_echo cyan "Current Xray-core version: " 1  # 1 for bold
     colorized_echo magenta "$current_version" 1
+    echo
     DEFAULT_SERVICE_PORT="62050"
     DEFAULT_XRAY_API_PORT="62051"
     
