@@ -833,7 +833,31 @@ fi
     wait
     rm "${xray_filename}"
 }
+get_current_xray_core_version() {
+    XRAY_BINARY="$DATA_MAIN_DIR/xray-core/xray"
+    if [ -f "$XRAY_BINARY" ]; then
+        version_output=$("$XRAY_BINARY" -version 2>/dev/null)
+        if [ $? -eq 0 ]; then
+            version=$(echo "$version_output" | head -n1 | awk '{print $2}')
+            echo "$version"
+            return
+        fi
+    fi
 
+    # If local binary is not found or failed, check in the Docker container
+    CONTAINER_NAME="$APP_NAME"
+    if docker ps --format '{{.Names}}' | grep -q "^$CONTAINER_NAME$"; then
+        version_output=$(docker exec "$CONTAINER_NAME" xray -version 2>/dev/null)
+        if [ $? -eq 0 ]; then
+            # Extract the version number from the first line
+            version=$(echo "$version_output" | head -n1 | awk '{print $2}')
+            echo "$version (in container)"
+            return
+        fi
+    fi
+
+    echo "Not installed"
+}
 
 install_yq() {
     if command -v yq &>/dev/null; then
