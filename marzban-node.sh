@@ -64,20 +64,27 @@ SCRIPT_URL="https://github.com/$FETCH_REPO/raw/master/marzban-node.sh"
 colorized_echo() {
     local color=$1
     local text=$2
-    
+    local style=${3:-0}  # Default style is normal
+
     case $color in
         "red")
-        printf "\e[91m${text}\e[0m\n";;
+            printf "\e[${style};91m${text}\e[0m\n"
+        ;;
         "green")
-        printf "\e[92m${text}\e[0m\n";;
+            printf "\e[${style};92m${text}\e[0m\n"
+        ;;
         "yellow")
-        printf "\e[93m${text}\e[0m\n";;
+            printf "\e[${style};93m${text}\e[0m\n"
+        ;;
         "blue")
-        printf "\e[94m${text}\e[0m\n";;
+            printf "\e[${style};94m${text}\e[0m\n"
+        ;;
         "magenta")
-        printf "\e[95m${text}\e[0m\n";;
+            printf "\e[${style};95m${text}\e[0m\n"
+        ;;
         "cyan")
-        printf "\e[96m${text}\e[0m\n";;
+            printf "\e[${style};96m${text}\e[0m\n"
+        ;;
         *)
             echo "${text}"
         ;;
@@ -749,6 +756,9 @@ get_xray_core() {
         echo -e "\033[1;32m==============================\033[0m"
         echo -e "\033[1;32m      Xray-core Installer     \033[0m"
         echo -e "\033[1;32m==============================\033[0m"
+       current_version=$(get_current_xray_core_version)
+        echo -e "\033[1;33m>>>> Current Xray-core version: \033[1;1m$current_version\033[0m"
+        echo -e "\033[1;32m==============================\033[0m"
         echo -e "\033[1;33mAvailable Xray-core versions:\033[0m"
         for ((i=0; i<${#versions[@]}; i++)); do
             echo -e "\033[1;34m$((i + 1)):\033[0m ${versions[i]}"
@@ -949,7 +959,10 @@ usage() {
     colorized_echo cyan "Node Information:"
     colorized_echo magenta "  Cert file path: $CERT_FILE"
     colorized_echo magenta "  Node IP: $NODE_IP"
-
+    echo
+    current_version=$(get_current_xray_core_version)
+    colorized_echo cyan "Current Xray-core version: " 1  # 1 for bold
+    colorized_echo magenta "$current_version" 1
     DEFAULT_SERVICE_PORT="62050"
     DEFAULT_XRAY_API_PORT="62051"
     
