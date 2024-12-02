@@ -722,16 +722,16 @@ install_yq() {
     local yq_binary=""
 
     case "$ARCH" in
-        '64')
+        '64' | 'x86_64')
             yq_binary="yq_linux_amd64"
             ;;
-        'arm32-v7a' | 'arm32-v6' | 'arm32-v5')
+        'arm32-v7a' | 'arm32-v6' | 'arm32-v5' | 'armv7l')
             yq_binary="yq_linux_arm"
             ;;
-        'arm64-v8a')
+        'arm64-v8a' | 'aarch64')
             yq_binary="yq_linux_arm64"
             ;;
-        '32')
+        '32' | 'i386' | 'i686')
             yq_binary="yq_linux_386"
             ;;
         *)
@@ -751,8 +751,9 @@ install_yq() {
         }
     fi
 
+
     if command -v curl &>/dev/null; then
-        if curl -sSL "$yq_url" -o /usr/local/bin/yq; then
+        if curl -L "$yq_url" -o /usr/local/bin/yq; then
             chmod +x /usr/local/bin/yq
             colorized_echo green "yq installed successfully!"
         else
@@ -760,7 +761,7 @@ install_yq() {
             exit 1
         fi
     elif command -v wget &>/dev/null; then
-        if wget -q -O /usr/local/bin/yq "$yq_url"; then
+        if wget -O /usr/local/bin/yq "$yq_url"; then
             chmod +x /usr/local/bin/yq
             colorized_echo green "yq installed successfully!"
         else
@@ -769,7 +770,21 @@ install_yq() {
         fi
     fi
 
-    if ! command -v yq &>/dev/null; then
+
+    if ! echo "$PATH" | grep -q "/usr/local/bin"; then
+        export PATH="/usr/local/bin:$PATH"
+    fi
+
+
+    hash -r
+
+    if command -v yq &>/dev/null; then
+        colorized_echo green "yq is ready to use."
+    elif [ -x "/usr/local/bin/yq" ]; then
+
+        colorized_echo yellow "yq is installed at /usr/local/bin/yq but not found in PATH."
+        colorized_echo yellow "You can add /usr/local/bin to your PATH environment variable."
+    else
         colorized_echo red "yq installation failed. Please try again or install manually."
         exit 1
     fi
