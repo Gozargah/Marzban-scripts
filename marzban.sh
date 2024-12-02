@@ -197,6 +197,328 @@ identify_the_operating_system_and_architecture() {
     fi
 }
 
+
+send_backup_to_telegram() {
+
+    generate_backup_message() {
+        local part_name=$1
+        local server_ip=$2
+        local is_single_file=$3
+        local timestamp=$(date)
+
+        if [ "$is_single_file" = true ]; then
+            cat <<EOF
+📦 *Backup Information*
+🌐 *Server IP*: \`${server_ip}\`
+📁 *Included Files*:
+  - \`.env\`
+  - \`docker-compose.yml\`
+  - \`/var/lib/marzban\` \(excluding \`xray-core\`, \`mysql\`\)
+⏰ *Backup Time*: \`${timestamp}\`
+EOF
+        else
+            cat <<EOF
+📦 *Backup Information*
+🗂 *Part*: \`${part_name}\`
+🌐 *Server IP*: \`${server_ip}\`
+📁 *Included Files*:
+  - \`.env\`
+  - \`docker-compose.yml\`
+  - \`/var/lib/marzban\` \(excluding \`xray-core\`, \`mysql\`\)
+⏰ *Backup Time*: \`${timestamp}\`
+EOF
+        fi
+    }
+
+
+    if [ -f "$ENV_FILE" ]; then
+        while IFS='=' read -r key value; do
+            if [[ -z "$key" || "$key" =~ ^# ]]; then
+                continue
+            fi
+            key=$(echo "$key" | xargs)
+            value=$(echo "$value" | xargs)
+            if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+                export "$key"="$value"
+            else
+                colorized_echo yellow "Skipping invalid line in .env: $key=$value"
+            fi
+        done < "$ENV_FILE"
+    else
+        colorized_echo red "Environment file (.env) not found."
+        exit 1
+    fi
+
+    if [ "$BACKUP_SERVICE_ENABLED" != "true" ]; then
+        colorized_echo yellow "Backup service is not enabled. Skipping Telegram upload."
+        return
+    fi
+
+    local server_ip=$(curl -s ifconfig.me || echo "Unknown IP")
+    local latest_backup=$(ls -t "$APP_DIR/backup" | head -n 1)
+    local backup_path="$APP_DIR/backup/$latest_backup"
+
+    if [ ! -f "$backup_path" ]; then
+        colorized_echo red "No backups found to send."
+        return
+    fi
+
+    local backup_size=$(du -m "$backup_path" | cut -f1)
+    local split_dir="/tmp/marzban_backup_split"
+    local is_single_file=true
+
+    mkdir -p "$split_dir"
+
+    if [ "$backup_size" -gt 49 ]; then
+        colorized_echo yellow "Backup is larger than 49MB. Splitting the archive..."
+        split -b 49M "$backup_path" "$split_dir/part_"
+        is_single_file=false
+    else
+        cp "$backup_path" "$split_dir/part_aa"
+    fi
+
+    for part in "$split_dir"/*; do
+        local part_name=$(basename "$part")
+        local custom_filename="backup_${timestamp}_${part_name}.tar.gz"
+        curl -s -F chat_id="$BACKUP_TELEGRAM_CHAT_ID" \
+            -F document=@"$part;filename=$custom_filename" \
+            -F caption="$(generate_backup_message "$part_name" "$server_ip" "$is_single_file" | sed 's/-/\\-/g')" \
+            -F parse_mode="MarkdownV2" \
+            "https://api.telegram.org/bot$BACKUP_TELEGRAM_BOT_KEY/sendDocument" >/dev/null 2>&1 && \
+            colorized_echo green "Backup part $custom_filename successfully sent to Telegram." || \
+            colorized_echo red "Failed to send backup part $custom_filename to Telegram."
+    done
+
+    rm -rf "$split_dir"
+}
+backup_service() {
+    local telegram_bot_key=""
+    local telegram_chat_id=""
+    local cron_schedule=""
+    local interval_hours=""
+
+    colorized_echo blue "====================================="
+    colorized_echo blue "      Welcome to Backup Service      "
+    colorized_echo blue "====================================="
+
+
+    if grep -q "BACKUP_SERVICE_ENABLED=true" "$ENV_FILE"; then
+
+        telegram_bot_key=$(awk -F'=' '/^BACKUP_TELEGRAM_BOT_KEY=/ {gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}' "$ENV_FILE")
+        telegram_chat_id=$(awk -F'=' '/^BACKUP_TELEGRAM_CHAT_ID=/ {gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}' "$ENV_FILE")
+        cron_schedule=$(awk -F'=' '/^BACKUP_CRON_SCHEDULE=/ {gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2}' "$ENV_FILE" | tr -d '"')
+        interval_hours=$(echo "$cron_schedule" | grep -oP '\*/\K[0-9]+')
+
+        colorized_echo green "====================================="
+        colorized_echo green "Current Backup Configuration:"
+        colorized_echo cyan "Telegram Bot API Key: $telegram_bot_key"
+        colorized_echo cyan "Telegram Chat ID: $telegram_chat_id"
+        colorized_echo cyan "Backup Interval: Every $interval_hours hour(s)"
+        colorized_echo green "====================================="
+
+        echo "Choose an option:"
+        echo "1. Reconfigure Backup Service"
+        echo "2. Remove Backup Service"
+        echo "3. Exit"
+        read -p "Enter your choice (1-3): " user_choice
+
+        case $user_choice in
+            1)
+                colorized_echo yellow "Starting reconfiguration..."
+                ;;
+            2)
+                colorized_echo yellow "Removing Backup Service..."
+                remove_backup_service
+                return
+                ;;
+            3)
+                colorized_echo yellow "Exiting..."
+                return
+                ;;
+            *)
+                colorized_echo red "Invalid choice. Exiting."
+                return
+                ;;
+        esac
+    else
+        colorized_echo yellow "No backup service is currently configured."
+    fi
+
+
+    while true; do
+        colorized_echo blue "====================================="
+        read -p "Enter your Telegram bot API key: " telegram_bot_key
+        if [[ -n "$telegram_bot_key" ]]; then
+            break
+        else
+            colorized_echo red "API key cannot be empty. Please try again."
+        fi
+    done
+
+
+    while true; do
+        colorized_echo blue "====================================="
+        read -p "Enter your Telegram chat ID: " telegram_chat_id
+        if [[ -n "$telegram_chat_id" ]]; then
+            break
+        else
+            colorized_echo red "Chat ID cannot be empty. Please try again."
+        fi
+    done
+
+
+    while true; do
+        colorized_echo blue "====================================="
+        colorized_echo yellow "Set up the backup interval in hours (1-24)."
+        read -p "Enter the interval (in hours): " hours
+        if [[ "$hours" =~ ^[1-9]$|^1[0-9]$|^2[0-4]$ ]]; then
+            break
+        else
+            colorized_echo red "Invalid input. Please enter a number between 1 and 24."
+        fi
+    done
+
+
+    cron_schedule="0 */$hours * * *"
+
+
+    {
+        echo ""
+        echo "# Backup service configuration"
+        echo "BACKUP_SERVICE_ENABLED=true"
+        echo "BACKUP_TELEGRAM_BOT_KEY=$telegram_bot_key"
+        echo "BACKUP_TELEGRAM_CHAT_ID=$telegram_chat_id"
+        echo "BACKUP_CRON_SCHEDULE=\"$cron_schedule\""
+    } >> "$ENV_FILE"
+
+    colorized_echo green "====================================="
+    colorized_echo green "Backup service configuration saved in $ENV_FILE."
+
+ 
+    local temp_cron=$(mktemp)
+
+  
+    crontab -l 2>/dev/null > "$temp_cron"
+
+  
+    grep -vE "$(which bash).*${APP_NAME} backup" "$temp_cron" > "$temp_cron.tmp" && mv "$temp_cron.tmp" "$temp_cron"
+
+
+    echo "$cron_schedule $(which bash) -c '$APP_NAME backup' # marzban-backup-service" >> "$temp_cron"
+
+
+    crontab "$temp_cron"
+
+
+    rm -f "$temp_cron"
+
+    colorized_echo green "====================================="
+    colorized_echo green "Backup service successfully configured."
+    colorized_echo cyan "Backups will be sent to Telegram every $hours hour(s)."
+    colorized_echo green "====================================="
+}
+
+remove_backup_service() {
+    colorized_echo red "in process..."
+
+
+    sed -i '/^# Backup service configuration/d' "$ENV_FILE"
+    sed -i '/BACKUP_SERVICE_ENABLED/d' "$ENV_FILE"
+    sed -i '/BACKUP_TELEGRAM_BOT_KEY/d' "$ENV_FILE"
+    sed -i '/BACKUP_TELEGRAM_CHAT_ID/d' "$ENV_FILE"
+    sed -i '/BACKUP_CRON_SCHEDULE/d' "$ENV_FILE"
+
+    local temp_cron=$(mktemp)
+    crontab -l 2>/dev/null > "$temp_cron"
+
+    sed -i '/# marzban-backup-service/d' "$temp_cron"
+
+    if crontab "$temp_cron"; then
+        colorized_echo green "Backup service task removed from crontab."
+    else
+        colorized_echo red "Failed to update crontab. Please check manually."
+    fi
+
+    rm -f "$temp_cron"
+
+    colorized_echo green "Backup service has been removed."
+}
+backup_command() {
+    local backup_dir="$APP_DIR/backup"
+    local temp_dir="/tmp/marzban_backup"
+    local timestamp=$(date +"%Y%m%d%H%M%S")
+    local backup_file="$backup_dir/backup_$timestamp.tar.gz"
+
+
+    if ! command -v rsync >/dev/null 2>&1; then
+        colorized_echo yellow "rsync is not installed. Installing..."
+        detect_os
+        install_package rsync
+    fi
+
+ 
+    rm -rf "$backup_dir"
+    mkdir -p "$backup_dir"
+    mkdir -p "$temp_dir"
+
+
+    if [ -f "$ENV_FILE" ]; then
+        MYSQL_ROOT_PASSWORD=$(grep -Po '(?<=^MYSQL_ROOT_PASSWORD=).*' "$ENV_FILE")
+    else
+        colorized_echo red "Environment file (.env) not found."
+        exit 1
+    fi
+
+    if [ -z "$MYSQL_ROOT_PASSWORD" ]; then
+        colorized_echo red "MYSQL_ROOT_PASSWORD is not set in .env file."
+        exit 1
+    fi
+
+    local db_type
+    if grep -q "image: mariadb" "$COMPOSE_FILE"; then
+        db_type="mariadb"
+        container_name=$(docker compose -f "$COMPOSE_FILE" ps -q mariadb || echo "mariadb")
+    elif grep -q "image: mysql" "$COMPOSE_FILE"; then
+        db_type="mysql"
+        container_name=$(docker compose -f "$COMPOSE_FILE" ps -q mysql || echo "mysql")
+    elif grep -q "SQLALCHEMY_DATABASE_URL = .*sqlite" "$ENV_FILE"; then
+        db_type="sqlite"
+        container_name=""
+    else
+        colorized_echo red "Database type could not be determined."
+        exit 1
+    fi
+
+    colorized_echo blue "Database detected: $db_type"
+
+    case $db_type in
+        mariadb)
+            docker exec "$container_name" mariadb-dump -u root -p"$MYSQL_ROOT_PASSWORD" --all-databases > "$temp_dir/db_backup.sql" 2>/dev/null
+            ;;
+        mysql)
+            docker exec "$container_name" mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" --all-databases > "$temp_dir/db_backup.sql" 2>/dev/null
+            ;;
+        sqlite)
+            local sqlite_file=$(grep -Po '(?<=SQLALCHEMY_DATABASE_URL = "sqlite:////).*"' "$ENV_FILE" | tr -d '"')
+            cp "$sqlite_file" "$temp_dir/db_backup.sqlite"
+            ;;
+    esac
+
+    cp "$APP_DIR/.env" "$temp_dir/"
+    cp "$APP_DIR/docker-compose.yml" "$temp_dir/"
+
+    rsync -av --exclude 'xray-core' --exclude 'mysql' "$DATA_DIR/" "$temp_dir/marzban_data/" >/dev/null
+
+    tar -czf "$backup_file" -C "$temp_dir" .
+
+    rm -rf "$temp_dir"
+
+    colorized_echo green "Backup created: $backup_file"
+
+    send_backup_to_telegram
+}
+
+
 get_xray_core() {
     identify_the_operating_system_and_architecture
     clear
@@ -1147,10 +1469,13 @@ usage() {
     colorized_echo yellow "  update          $(tput sgr0)– Update to latest version"
     colorized_echo yellow "  uninstall       $(tput sgr0)– Uninstall Marzban"
     colorized_echo yellow "  install-script  $(tput sgr0)– Install Marzban script"
+    colorized_echo yellow "  backup          $(tput sgr0)– Manual backup launch"
+    colorized_echo yellow "  backup-service  $(tput sgr0)– Marzban Backupservice to backup to TG, and a new job in crontab"
     colorized_echo yellow "  core-update     $(tput sgr0)– Update/Change Xray core"
     colorized_echo yellow "  edit            $(tput sgr0)– Edit docker-compose.yml (via nano or vi editor)"
     colorized_echo yellow "  edit-env        $(tput sgr0)– Edit environment file (via nano or vi editor)"
     colorized_echo yellow "  help            $(tput sgr0)– Show this help message"
+    
     
     echo
     colorized_echo cyan "Directories:"
@@ -1173,6 +1498,10 @@ case "$1" in
         shift; logs_command "$@";;
     cli)
         shift; cli_command "$@";;
+    backup)
+        shift; backup_command "$@";;
+    backup-service)
+        shift; backup_service "$@";;
     install)
         shift; install_command "$@";;
     update)
