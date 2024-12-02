@@ -6,7 +6,7 @@ while [[ $# -gt 0 ]]; do
     key="$1"
     
     case $key in
-        install|update|uninstall|up|down|restart|status|logs|core-update|install-script|edit)
+        install|update|uninstall|up|down|restart|status|logs|core-update|install-script|uninstall-script|edit)
             COMMAND="$1"
             shift # past argument
         ;;
@@ -44,7 +44,15 @@ if [ -z "$APP_NAME" ]; then
 fi
 
 INSTALL_DIR="/opt"
-APP_DIR="$INSTALL_DIR/$APP_NAME"
+
+if [ -d "$INSTALL_DIR/$APP_NAME" ]; then
+    APP_DIR="$INSTALL_DIR/$APP_NAME"
+elif [ -d "$INSTALL_DIR/Marzban-node" ]; then
+    APP_DIR="$INSTALL_DIR/Marzban-node"
+else
+    APP_DIR="$INSTALL_DIR/$APP_NAME"
+fi
+
 DATA_DIR="/var/lib/$APP_NAME"
 DATA_MAIN_DIR="/var/lib/$APP_NAME"
 COMPOSE_FILE="$APP_DIR/docker-compose.yml"
@@ -56,20 +64,27 @@ SCRIPT_URL="https://github.com/$FETCH_REPO/raw/master/marzban-node.sh"
 colorized_echo() {
     local color=$1
     local text=$2
-    
+    local style=${3:-0}  # Default style is normal
+
     case $color in
         "red")
-        printf "\e[91m${text}\e[0m\n";;
+            printf "\e[${style};91m${text}\e[0m\n"
+        ;;
         "green")
-        printf "\e[92m${text}\e[0m\n";;
+            printf "\e[${style};92m${text}\e[0m\n"
+        ;;
         "yellow")
-        printf "\e[93m${text}\e[0m\n";;
+            printf "\e[${style};93m${text}\e[0m\n"
+        ;;
         "blue")
-        printf "\e[94m${text}\e[0m\n";;
+            printf "\e[${style};94m${text}\e[0m\n"
+        ;;
         "magenta")
-        printf "\e[95m${text}\e[0m\n";;
+            printf "\e[${style};95m${text}\e[0m\n"
+        ;;
         "cyan")
-        printf "\e[96m${text}\e[0m\n";;
+            printf "\e[${style};96m${text}\e[0m\n"
+        ;;
         *)
             echo "${text}"
         ;;
@@ -103,22 +118,26 @@ detect_and_update_package_manager() {
     colorized_echo blue "Updating package manager"
     if [[ "$OS" == "Ubuntu"* ]] || [[ "$OS" == "Debian"* ]]; then
         PKG_MANAGER="apt-get"
-        $PKG_MANAGER update
-        elif [[ "$OS" == "CentOS"* ]] || [[ "$OS" == "AlmaLinux"* ]]; then
+        $PKG_MANAGER update -qq >/dev/null 2>&1
+    elif [[ "$OS" == "CentOS"* ]] || [[ "$OS" == "AlmaLinux"* ]]; then
         PKG_MANAGER="yum"
-        $PKG_MANAGER update -y
-        $PKG_MANAGER install -y epel-release
-        elif [ "$OS" == "Fedora"* ]; then
+        $PKG_MANAGER update -y -q >/dev/null 2>&1
+        $PKG_MANAGER install -y -q epel-release >/dev/null 2>&1
+    elif [[ "$OS" == "Fedora"* ]]; then
         PKG_MANAGER="dnf"
-        $PKG_MANAGER update
-        elif [ "$OS" == "Arch" ]; then
+        $PKG_MANAGER update -q -y >/dev/null 2>&1
+    elif [[ "$OS" == "Arch"* ]]; then
         PKG_MANAGER="pacman"
-        $PKG_MANAGER -Sy
+        $PKG_MANAGER -Sy --noconfirm --quiet >/dev/null 2>&1
+    elif [[ "$OS" == "openSUSE"* ]]; then
+        PKG_MANAGER="zypper"
+        $PKG_MANAGER refresh --quiet >/dev/null 2>&1
     else
         colorized_echo red "Unsupported operating system"
         exit 1
     fi
 }
+
 
 detect_compose() {
     # Check if docker compose command exists
@@ -133,23 +152,23 @@ detect_compose() {
 }
 
 install_package () {
-    if [ -z $PKG_MANAGER ]; then
+    if [ -z "$PKG_MANAGER" ]; then
         detect_and_update_package_manager
     fi
-    
+
     PACKAGE=$1
     colorized_echo blue "Installing $PACKAGE"
     if [[ "$OS" == "Ubuntu"* ]] || [[ "$OS" == "Debian"* ]]; then
-        $PKG_MANAGER -y install "$PACKAGE"
-        elif [[ "$OS" == "CentOS"* ]] || [[ "$OS" == "AlmaLinux"* ]]; then
-        $PKG_MANAGER install -y "$PACKAGE"
-        elif [ "$OS" == "Fedora"* ]; then
-        $PKG_MANAGER install -y "$PACKAGE"
-        elif [ "$OS" == "Arch" ]; then
-        $PKG_MANAGER -S --noconfirm "$PACKAGE"
-        elif [[ "$OS" == "openSUSE"* ]]; then
+        $PKG_MANAGER -y -qq install "$PACKAGE" >/dev/null 2>&1
+    elif [[ "$OS" == "CentOS"* ]] || [[ "$OS" == "AlmaLinux"* ]]; then
+        $PKG_MANAGER install -y -q "$PACKAGE" >/dev/null 2>&1
+    elif [[ "$OS" == "Fedora"* ]]; then
+        $PKG_MANAGER install -y -q "$PACKAGE" >/dev/null 2>&1
+    elif [[ "$OS" == "Arch"* ]]; then
+        $PKG_MANAGER -S --noconfirm --quiet "$PACKAGE" >/dev/null 2>&1
+    elif [[ "$OS" == "openSUSE"* ]]; then
         PKG_MANAGER="zypper"
-        $PKG_MANAGER refresh
+        $PKG_MANAGER --quiet install -y "$PACKAGE" >/dev/null 2>&1
     else
         colorized_echo red "Unsupported operating system"
         exit 1
@@ -176,15 +195,15 @@ install_marzban_node_script() {
 
 # Get a list of occupied ports
 get_occupied_ports() {
-    if command -v ss &> /dev/null; then
+    if command -v ss &>/dev/null; then
         OCCUPIED_PORTS=$(ss -tuln | awk '{print $5}' | grep -Eo '[0-9]+$' | sort | uniq)
-    elif command -v netstat &> /dev/null; then
+    elif command -v netstat &>/dev/null; then
         OCCUPIED_PORTS=$(netstat -tuln | awk '{print $4}' | grep -Eo '[0-9]+$' | sort | uniq)
     else
         colorized_echo yellow "Neither ss nor netstat found. Attempting to install net-tools."
         detect_os
         install_package net-tools
-        if command -v netstat &> /dev/null; then
+        if command -v netstat &>/dev/null; then
             OCCUPIED_PORTS=$(netstat -tuln | awk '{print $4}' | grep -Eo '[0-9]+$' | sort | uniq)
         else
             colorized_echo red "Failed to install net-tools. Please install it manually."
@@ -210,7 +229,7 @@ install_marzban_node() {
     
     # Проверка на существование файла перед его очисткой
     if [ -f "$CERT_FILE" ]; then
-        > "$CERT_FILE"
+        >"$CERT_FILE"
     fi
     
     # Function to print information to the user
@@ -225,7 +244,7 @@ install_marzban_node() {
         if [[ -z $line ]]; then
             break
         fi
-        echo "$line" >> "$CERT_FILE"
+        echo "$line" >>"$CERT_FILE"
     done
     
     print_info "Certificate saved to $CERT_FILE"
@@ -737,6 +756,9 @@ get_xray_core() {
         echo -e "\033[1;32m==============================\033[0m"
         echo -e "\033[1;32m      Xray-core Installer     \033[0m"
         echo -e "\033[1;32m==============================\033[0m"
+       current_version=$(get_current_xray_core_version)
+        echo -e "\033[1;33m>>>> Current Xray-core version: \033[1;1m$current_version\033[0m"
+        echo -e "\033[1;32m==============================\033[0m"
         echo -e "\033[1;33mAvailable Xray-core versions:\033[0m"
         for ((i=0; i<${#versions[@]}; i++)); do
             echo -e "\033[1;34m$((i + 1)):\033[0m ${versions[i]}"
@@ -785,11 +807,12 @@ get_xray_core() {
     echo -e "\033[1;32mSelected version $selected_version for installation.\033[0m"
     
     
-    if ! dpkg -s unzip >/dev/null 2>&1; then
-        echo -e "\033[1;33mInstalling required packages...\033[0m"
-        apt install -y unzip >/dev/null 2>&1 &
-        wait
-    fi
+if ! dpkg -s unzip >/dev/null 2>&1; then
+    echo -e "\033[1;33mInstalling required packages...\033[0m"
+    detect_os
+    install_package unzip
+fi
+
     
     
     mkdir -p $DATA_MAIN_DIR/xray-core
@@ -810,30 +833,100 @@ get_xray_core() {
     wait
     rm "${xray_filename}"
 }
+get_current_xray_core_version() {
+    XRAY_BINARY="$DATA_MAIN_DIR/xray-core/xray"
+    if [ -f "$XRAY_BINARY" ]; then
+        version_output=$("$XRAY_BINARY" -version 2>/dev/null)
+        if [ $? -eq 0 ]; then
+            version=$(echo "$version_output" | head -n1 | awk '{print $2}')
+            echo "$version"
+            return
+        fi
+    fi
 
-# Function to update the Marzban-node Main core
+    # If local binary is not found or failed, check in the Docker container
+    CONTAINER_NAME="$APP_NAME"
+    if docker ps --format '{{.Names}}' | grep -q "^$CONTAINER_NAME$"; then
+        version_output=$(docker exec "$CONTAINER_NAME" xray -version 2>/dev/null)
+        if [ $? -eq 0 ]; then
+            # Extract the version number from the first line
+            version=$(echo "$version_output" | head -n1 | awk '{print $2}')
+            echo "$version (in container)"
+            return
+        fi
+    fi
+
+    echo "Not installed"
+}
+
+install_yq() {
+    if command -v yq &>/dev/null; then
+        return
+    fi
+    identify_the_operating_system_and_architecture
+    local base_url="https://github.com/mikefarah/yq/releases/latest/download"
+    local yq_binary=""
+
+    case "$(uname)" in
+        "Linux")
+            case "$ARCH" in
+                '64')
+                    yq_binary="yq_linux_amd64"
+                ;;
+                'arm32-v7a' | 'arm32-v6' | 'arm32-v5')
+                    yq_binary="yq_linux_arm"
+                ;;
+                'arm64-v8a')
+                    yq_binary="yq_linux_arm64"
+                ;;
+                '386')
+                    yq_binary="yq_linux_386"
+                ;;
+                *)
+                    echo "Error: Unsupported architecture for Linux: $ARCH" >&2
+                    exit 1
+                ;;
+            esac
+        ;;
+        *)
+            echo "Error: Unsupported operating system: $(uname)" >&2
+            exit 1
+        ;;
+    esac
+
+    local yq_url="$base_url/$yq_binary"
+    sudo wget -q -O /usr/local/bin/yq "$yq_url" 2>/dev/null && \
+    sudo chmod +x /usr/local/bin/yq 2>/dev/null
+    if command -v yq &>/dev/null; then
+        return
+    else
+        echo "Error: Failed to install yq. Please check your setup." >&2
+        exit 1
+    fi
+}
+
+
 update_core_command() {
     check_running_as_root
     get_xray_core
-    # Change the Marzban-node core
-    echo "Changing the Marzban-node core..."
-    # Check if the XRAY_EXECUTABLE_PATH string already exists in the docker-compose.yml file
-    if ! grep -q "XRAY_EXECUTABLE_PATH: \"/var/lib/marzban/xray-core/xray\"" "$COMPOSE_FILE"; then
-        # If the string does not exist, add it
-        sed -i '/environment:/!b;n;/XRAY_EXECUTABLE_PATH/!a\      XRAY_EXECUTABLE_PATH: "/var/lib/marzban/xray-core/xray"' "$COMPOSE_FILE"
+
+    if ! command -v yq &>/dev/null; then
+        echo "yq is not installed. Installing yq..."
+        install_yq
     fi
-    
-    # Check if the /var/lib/marzban:/var/lib/marzban string already exists in the docker-compose.yml file
-    if ! grep -q "^\s*- ${DATA_MAIN_DIR}:/var/lib/marzban\s*$" "$COMPOSE_FILE"; then
-        # If the string does not exist, add it
-        sed -i "/volumes:/!b;n;/^- ${DATA_MAIN_DIR}:\/var\/lib\/marzban/!a\      - ${DATA_MAIN_DIR}:\/var\/lib\/marzban" "$COMPOSE_FILE"
+
+    if ! grep -q 'XRAY_EXECUTABLE_PATH: "/var/lib/marzban-node/xray-core/xray"' "$COMPOSE_FILE"; then
+        yq eval '.services."marzban-node".environment.XRAY_EXECUTABLE_PATH = "/var/lib/marzban-node/xray-core/xray"' -i "$COMPOSE_FILE"
     fi
-    
+
+    if ! yq eval ".services.\"marzban-node\".volumes[] | select(. == \"${DATA_MAIN_DIR}:/var/lib/marzban-node\")" "$COMPOSE_FILE" &>/dev/null; then
+        yq eval ".services.\"marzban-node\".volumes += \"${DATA_MAIN_DIR}:/var/lib/marzban-node\"" -i "$COMPOSE_FILE"
+    fi
     
     # Restart Marzban-node
     colorized_echo red "Restarting Marzban-node..."
     $APP_NAME restart -n
-    colorized_echo blue "Installation XRAY-CORE version $selected_version completed."
+    colorized_echo blue "Installation of XRAY-CORE version $selected_version completed."
 }
 
 
@@ -865,35 +958,51 @@ edit_command() {
 
 
 usage() {
+    colorized_echo blue "================================"
+    colorized_echo magenta "       $APP_NAME Node CLI Help"
+    colorized_echo blue "================================"
+    colorized_echo cyan "Usage:"
+    echo "  $APP_NAME [command]"
+    echo
+
+    colorized_echo cyan "Commands:"
+    colorized_echo yellow "  up              $(tput sgr0)– Start services"
+    colorized_echo yellow "  down            $(tput sgr0)– Stop services"
+    colorized_echo yellow "  restart         $(tput sgr0)– Restart services"
+    colorized_echo yellow "  status          $(tput sgr0)– Show status"
+    colorized_echo yellow "  logs            $(tput sgr0)– Show logs"
+    colorized_echo yellow "  install         $(tput sgr0)– Install/reinstall Marzban-node"
+    colorized_echo yellow "  update          $(tput sgr0)– Update to latest version"
+    colorized_echo yellow "  uninstall       $(tput sgr0)– Uninstall Marzban-node"
+    colorized_echo yellow "  install-script  $(tput sgr0)– Install Marzban-node script"
+    colorized_echo yellow "  uninstall-script  $(tput sgr0)– Uninstall Marzban-node script"
+    colorized_echo yellow "  edit            $(tput sgr0)– Edit docker-compose.yml (via nano or vi)"
+    colorized_echo yellow "  core-update     $(tput sgr0)– Update/Change Xray core"
     
-    colorized_echo red "Usage: $APP_NAME [command]"
     echo
-    echo "Commands:"
-    echo "  up              Start services"
-    echo "  down            Stop services"
-    echo "  restart         Restart services"
-    echo "  status          Show status"
-    echo "  logs            Show logs"
-    echo "  install         Install/reinstall Marzban-node"
-    echo "  update          Update latest version"
-    echo "  uninstall       Uninstall Marzban-node"
-    echo "  install-script  Install Marzban-node script"
-    echo "  edit            edit docker-compose.yml (via nano or vi editor)"
-    echo "  core-update     Update/Change Xray core"
-    echo
+    colorized_echo cyan "Node Information:"
     colorized_echo magenta "  Cert file path: $CERT_FILE"
-    colorized_echo magenta "  IP: $NODE_IP"
+    colorized_echo magenta "  Node IP: $NODE_IP"
+    echo
+    current_version=$(get_current_xray_core_version)
+    colorized_echo cyan "Current Xray-core version: " 1  # 1 for bold
+    colorized_echo magenta "$current_version" 1
+    echo
     DEFAULT_SERVICE_PORT="62050"
     DEFAULT_XRAY_API_PORT="62051"
+    
     if [ -f "$COMPOSE_FILE" ]; then
         SERVICE_PORT=$(awk -F': ' '/SERVICE_PORT:/ {gsub(/"/, "", $2); print $2}' "$COMPOSE_FILE")
         XRAY_API_PORT=$(awk -F': ' '/XRAY_API_PORT:/ {gsub(/"/, "", $2); print $2}' "$COMPOSE_FILE")
     fi
+    
     SERVICE_PORT=${SERVICE_PORT:-$DEFAULT_SERVICE_PORT}
     XRAY_API_PORT=${XRAY_API_PORT:-$DEFAULT_XRAY_API_PORT}
+
+    colorized_echo cyan "Ports:"
     colorized_echo magenta "  Service port: $SERVICE_PORT"
     colorized_echo magenta "  API port: $XRAY_API_PORT"
-    
+    colorized_echo blue "================================="
     echo
 }
 
@@ -927,6 +1036,9 @@ case "$COMMAND" in
     ;;
     install-script)
         install_marzban_node_script
+    ;;
+    uninstall-script)
+        uninstall_marzban_node_script
     ;;
     edit)
         edit_command
