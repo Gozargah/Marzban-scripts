@@ -527,13 +527,13 @@ EOF
 
         colorized_echo blue "Fetching .env file"
         curl -sL "$FILES_URL_PREFIX/.env.example" -o "$APP_DIR/.env"
-        yq -i '(.XRAY_JSON | select(. == "# XRAY_JSON = ")). |= sub("# ", "")' "$APP_DIR/.env"
+        sed -i 's/^# \(XRAY_JSON = .*\)$/\1/' "$APP_DIR/.env"
+        
+        sed -i 's~\(XRAY_JSON = \).*~\1"/var/lib/marzban/xray_config.json"~' "$APP_DIR/.env"
 
-        yq -i '(.SQLALCHEMY_DATABASE_URL | select(. == "# SQLALCHEMY_DATABASE_URL = ")). |= sub("# ", "")' "$APP_DIR/.env"
+        sed -i 's/^# \(SQLALCHEMY_DATABASE_URL = .*\)$/\1/' "$APP_DIR/.env"
 
-        yq -i '.XRAY_JSON = "/var/lib/marzban/xray_config.json"' "$APP_DIR/.env"
-
-        yq -i '.SQLALCHEMY_DATABASE_URL = "sqlite:////var/lib/marzban/db.sqlite3"' "$APP_DIR/.env"
+        sed -i 's~\(SQLALCHEMY_DATABASE_URL = \).*~\1"sqlite:////var/lib/marzban/db.sqlite3"~' "$APP_DIR/.env"
 
 
 
