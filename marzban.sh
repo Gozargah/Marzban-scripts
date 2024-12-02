@@ -712,46 +712,48 @@ install_command() {
 
 install_yq() {
     if command -v yq &>/dev/null; then
+        colorized_echo green "yq is already installed."
         return
     fi
+
     identify_the_operating_system_and_architecture
+
     local base_url="https://github.com/mikefarah/yq/releases/latest/download"
     local yq_binary=""
 
-    case "$(uname)" in
-        "Linux")
-            case "$ARCH" in
-                '64')
-                    yq_binary="yq_linux_amd64"
-                ;;
-                'arm32-v7a' | 'arm32-v6' | 'arm32-v5')
-                    yq_binary="yq_linux_arm"
-                ;;
-                'arm64-v8a')
-                    yq_binary="yq_linux_arm64"
-                ;;
-                '386')
-                    yq_binary="yq_linux_386"
-                ;;
-                *)
-                    echo "Error: Unsupported architecture for Linux: $ARCH" >&2
-                    exit 1
-                ;;
-            esac
-        ;;
+    case "$ARCH" in
+        '64')
+            yq_binary="yq_linux_amd64"
+            ;;
+        'arm32-v7a' | 'arm32-v6' | 'arm32-v5')
+            yq_binary="yq_linux_arm"
+            ;;
+        'arm64-v8a')
+            yq_binary="yq_linux_arm64"
+            ;;
+        '32')
+            yq_binary="yq_linux_386"
+            ;;
         *)
-            echo "Error: Unsupported operating system: $(uname)" >&2
+            colorized_echo red "Unsupported architecture: $ARCH"
             exit 1
-        ;;
+            ;;
     esac
 
-    local yq_url="$base_url/$yq_binary"
-    sudo wget -q -O /usr/local/bin/yq "$yq_url" 2>/dev/null && \
-    sudo chmod +x /usr/local/bin/yq 2>/dev/null
-    if command -v yq &>/dev/null; then
-        return
+    local yq_url="${base_url}/${yq_binary}"
+    colorized_echo blue "Downloading yq from ${yq_url}..."
+    
+    if wget -q -O /usr/local/bin/yq "$yq_url"; then
+        chmod +x /usr/local/bin/yq
+        colorized_echo green "yq installed successfully!"
     else
-        echo "Error: Failed to install yq. Please check your setup." >&2
+        colorized_echo red "Failed to download yq. Please check your internet connection or manually download it from ${base_url}."
+        exit 1
+    fi
+
+    # Verify installation
+    if ! command -v yq &>/dev/null; then
+        colorized_echo red "yq installation failed. Please try again or install manually."
         exit 1
     fi
 }
