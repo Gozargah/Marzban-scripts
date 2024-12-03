@@ -861,49 +861,84 @@ get_current_xray_core_version() {
 
 install_yq() {
     if command -v yq &>/dev/null; then
+        colorized_echo green "yq is already installed."
         return
     fi
+
     identify_the_operating_system_and_architecture
+
     local base_url="https://github.com/mikefarah/yq/releases/latest/download"
     local yq_binary=""
 
-    case "$(uname)" in
-        "Linux")
-            case "$ARCH" in
-                '64')
-                    yq_binary="yq_linux_amd64"
-                ;;
-                'arm32-v7a' | 'arm32-v6' | 'arm32-v5')
-                    yq_binary="yq_linux_arm"
-                ;;
-                'arm64-v8a')
-                    yq_binary="yq_linux_arm64"
-                ;;
-                '386')
-                    yq_binary="yq_linux_386"
-                ;;
-                *)
-                    echo "Error: Unsupported architecture for Linux: $ARCH" >&2
-                    exit 1
-                ;;
-            esac
-        ;;
+    case "$ARCH" in
+        '64' | 'x86_64')
+            yq_binary="yq_linux_amd64"
+            ;;
+        'arm32-v7a' | 'arm32-v6' | 'arm32-v5' | 'armv7l')
+            yq_binary="yq_linux_arm"
+            ;;
+        'arm64-v8a' | 'aarch64')
+            yq_binary="yq_linux_arm64"
+            ;;
+        '32' | 'i386' | 'i686')
+            yq_binary="yq_linux_386"
+            ;;
         *)
-            echo "Error: Unsupported operating system: $(uname)" >&2
+            colorized_echo red "Unsupported architecture: $ARCH"
             exit 1
-        ;;
+            ;;
     esac
 
-    local yq_url="$base_url/$yq_binary"
-    sudo wget -q -O /usr/local/bin/yq "$yq_url" 2>/dev/null && \
-    sudo chmod +x /usr/local/bin/yq 2>/dev/null
+    local yq_url="${base_url}/${yq_binary}"
+    colorized_echo blue "Downloading yq from ${yq_url}..."
+
+    if ! command -v curl &>/dev/null && ! command -v wget &>/dev/null; then
+        colorized_echo yellow "Neither curl nor wget is installed. Attempting to install curl."
+        install_package curl || {
+            colorized_echo red "Failed to install curl. Please install curl or wget manually."
+            exit 1
+        }
+    fi
+
+
+    if command -v curl &>/dev/null; then
+        if curl -L "$yq_url" -o /usr/local/bin/yq; then
+            chmod +x /usr/local/bin/yq
+            colorized_echo green "yq installed successfully!"
+        else
+            colorized_echo red "Failed to download yq using curl. Please check your internet connection."
+            exit 1
+        fi
+    elif command -v wget &>/dev/null; then
+        if wget -O /usr/local/bin/yq "$yq_url"; then
+            chmod +x /usr/local/bin/yq
+            colorized_echo green "yq installed successfully!"
+        else
+            colorized_echo red "Failed to download yq using wget. Please check your internet connection."
+            exit 1
+        fi
+    fi
+
+
+    if ! echo "$PATH" | grep -q "/usr/local/bin"; then
+        export PATH="/usr/local/bin:$PATH"
+    fi
+
+
+    hash -r
+
     if command -v yq &>/dev/null; then
-        return
+        colorized_echo green "yq is ready to use."
+    elif [ -x "/usr/local/bin/yq" ]; then
+
+        colorized_echo yellow "yq is installed at /usr/local/bin/yq but not found in PATH."
+        colorized_echo yellow "You can add /usr/local/bin to your PATH environment variable."
     else
-        echo "Error: Failed to install yq. Please check your setup." >&2
+        colorized_echo red "yq installation failed. Please try again or install manually."
         exit 1
     fi
 }
+
 
 
 update_core_command() {
