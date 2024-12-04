@@ -266,23 +266,52 @@ send_backup_to_telegram() {
 
 send_backup_error_to_telegram() {
     local error_messages=$1
+    local log_file=$2
     local server_ip=$(curl -s ifconfig.me || echo "Unknown IP")
     local error_time=$(date "+%Y-%m-%d %H:%M:%S %Z")
     local message="⚠️ *Backup Error Notification*\n"
     message+="🌐 *Server IP*: \`${server_ip}\`\n"
     message+="❌ *Errors*:\n\`${error_messages//_/\\_}\`\n"
     message+="⏰ *Time*: \`${error_time}\`"
-    local max_length=4000
+
+
+    message=$(echo -e "$message" | sed 's/-/\\-/g;s/\./\\./g;s/_/\\_/g;s/(/\\(/g;s/)/\\)/g')
+
+    local max_length=1000
     if [ ${#message} -gt $max_length ]; then
-        message="${message:0:$((max_length - 50))}...\n\`[Message truncated due to length]\`"
+        message="${message:0:$((max_length - 50))}...\n\`[Message truncated]\`"
     fi
+
+
     curl -s -X POST "https://api.telegram.org/bot$BACKUP_TELEGRAM_BOT_KEY/sendMessage" \
         -d chat_id="$BACKUP_TELEGRAM_CHAT_ID" \
         -d parse_mode="MarkdownV2" \
-        -d text="$(echo -e "$message" | sed 's/-/\\-/g;s/\./\\./g;s/_/\\_/g')" >/dev/null 2>&1 && \
-        colorized_echo green "Backup error notification sent to Telegram." || \
-        colorized_echo red "Failed to send error notification to Telegram."
+        -d text="$message" >/dev/null 2>&1 && \
+    colorized_echo green "Backup error notification sent to Telegram." || \
+    colorized_echo red "Failed to send error notification to Telegram."
+
+
+    if [ -f "$log_file" ]; then
+        response=$(curl -s -w "%{http_code}" -o /tmp/tg_response.json \
+            -F chat_id="$BACKUP_TELEGRAM_CHAT_ID" \
+            -F document=@"$log_file;filename=backup_error.log" \
+            -F caption="📜 *Backup Error Log* - ${error_time}" \
+            "https://api.telegram.org/bot$BACKUP_TELEGRAM_BOT_KEY/sendDocument")
+
+        http_code="${response:(-3)}"
+        if [ "$http_code" -eq 200 ]; then
+            colorized_echo green "Backup error log sent to Telegram."
+        else
+            colorized_echo red "Failed to send backup error log to Telegram. HTTP code: $http_code"
+            cat /tmp/tg_response.json
+        fi
+    else
+        colorized_echo red "Log file not found: $log_file"
+    fi
 }
+
+
+
 
 
 backup_service() {
@@ -463,6 +492,11 @@ backup_command() {
     local timestamp=$(date +"%Y%m%d%H%M%S")
     local backup_file="$backup_dir/backup_$timestamp.tar.gz"
     local error_messages=()
+    local log_file="/var/log/marzban_backup_error.log"
+
+    # Очистка лога перед началом нового бэкапа
+    > "$log_file"
+    echo "Backup Log - $(date)" > "$log_file"
 
     if ! command -v rsync >/dev/null 2>&1; then
         detect_os
@@ -483,12 +517,13 @@ backup_command() {
             if [[ "$key" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
                 export "$key"="$value"
             else
-                colorized_echo yellow "Skipping invalid line in .env: $key=$value"
+                echo "Skipping invalid line in .env: $key=$value" >> "$log_file"
             fi
         done < "$ENV_FILE"
     else
         error_messages+=("Environment file (.env) not found.")
-        send_backup_error_to_telegram "${error_messages[*]}"
+        echo "Environment file (.env) not found." >> "$log_file"
+        send_backup_error_to_telegram "${error_messages[*]}" "$log_file"
         exit 1
     fi
 
@@ -512,17 +547,23 @@ backup_command() {
     fi
 
     if [ -n "$db_type" ]; then
-        colorized_echo blue "Database detected: $db_type"
+        echo "Database detected: $db_type" >> "$log_file"
         case $db_type in
             mariadb)
-                docker exec "$container_name" mariadb-dump -u root -p"$MYSQL_ROOT_PASSWORD" --all-databases > "$temp_dir/db_backup.sql" 2>/dev/null || error_messages+=("Failed to dump MariaDB database.")
+                if ! docker exec "$container_name" mariadb-dump -u root -p"$MYSQL_ROOT_PASSWORD" --all-databases > "$temp_dir/db_backup.sql" 2>>"$log_file"; then
+                    error_messages+=("MariaDB dump failed.")
+                fi
                 ;;
             mysql)
-                docker exec "$container_name" mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" --all-databases > "$temp_dir/db_backup.sql" 2>/dev/null || error_messages+=("Failed to dump MySQL database.")
+                if ! docker exec "$container_name" mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" --all-databases > "$temp_dir/db_backup.sql" 2>>"$log_file"; then
+                    error_messages+=("MySQL dump failed.")
+                fi
                 ;;
             sqlite)
                 if [ -f "$sqlite_file" ]; then
-                    cp "$sqlite_file" "$temp_dir/db_backup.sqlite" || error_messages+=("Failed to copy SQLite database.")
+                    if ! cp "$sqlite_file" "$temp_dir/db_backup.sqlite" 2>>"$log_file"; then
+                        error_messages+=("Failed to copy SQLite database.")
+                    fi
                 else
                     error_messages+=("SQLite database file not found at $sqlite_file.")
                 fi
@@ -530,23 +571,23 @@ backup_command() {
         esac
     fi
 
-    cp "$APP_DIR/.env" "$temp_dir/"
-    cp "$APP_DIR/docker-compose.yml" "$temp_dir/"
-    rsync -av --exclude 'xray-core' --exclude 'mysql' "$DATA_DIR/" "$temp_dir/marzban_data/" >/dev/null
+    cp "$APP_DIR/.env" "$temp_dir/" 2>>"$log_file"
+    cp "$APP_DIR/docker-compose.yml" "$temp_dir/" 2>>"$log_file"
+    rsync -av --exclude 'xray-core' --exclude 'mysql' "$DATA_DIR/" "$temp_dir/marzban_data/" >>"$log_file" 2>&1
 
     if ! tar -czf "$backup_file" -C "$temp_dir" .; then
         error_messages+=("Failed to create backup archive.")
-        exit 1
+        echo "Failed to create backup archive." >> "$log_file"
     fi
 
     rm -rf "$temp_dir"
 
     if [ ${#error_messages[@]} -gt 0 ]; then
-        send_backup_error_to_telegram "${error_messages[*]}"
+        send_backup_error_to_telegram "${error_messages[*]}" "$log_file"
         return
     fi
     colorized_echo green "Backup created: $backup_file"
-    send_backup_to_telegram "$backup_file" 
+    send_backup_to_telegram "$backup_file"
 }
 
 
