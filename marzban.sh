@@ -493,8 +493,6 @@ backup_command() {
     local backup_file="$backup_dir/backup_$timestamp.tar.gz"
     local error_messages=()
     local log_file="/var/log/marzban_backup_error.log"
-
-    # Очистка лога перед началом нового бэкапа
     > "$log_file"
     echo "Backup Log - $(date)" > "$log_file"
 
