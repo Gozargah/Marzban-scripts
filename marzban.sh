@@ -548,12 +548,12 @@ backup_command() {
         echo "Database detected: $db_type" >> "$log_file"
         case $db_type in
             mariadb)
-                if ! docker exec "$container_name" mariadb-dump -u root -p"$MYSQL_ROOT_PASSWORD" --all-databases > "$temp_dir/db_backup.sql" 2>>"$log_file"; then
+                if ! docker exec "$container_name" mariadb-dump -u root -p"$MYSQL_ROOT_PASSWORD" --all-databases --events --triggers --ignore-database=mysql --ignore-database=information_schema --ignore-database=performance_schema --ignore-database=sys > "$temp_dir/db_backup.sql" 2>>"$log_file"; then
                     error_messages+=("MariaDB dump failed.")
                 fi
                 ;;
             mysql)
-                if ! docker exec "$container_name" mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" --all-databases > "$temp_dir/db_backup.sql" 2>>"$log_file"; then
+                if ! docker exec "$container_name" mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" --all-databases --events --triggers --ignore-database=mysql --ignore-database=information_schema --ignore-database=performance_schema --ignore-database=sys > "$temp_dir/db_backup.sql" 2>>"$log_file"; then
                     error_messages+=("MySQL dump failed.")
                 fi
                 ;;
