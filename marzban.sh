@@ -70,7 +70,7 @@ detect_and_update_package_manager() {
     elif [ "$OS" == "Fedora"* ]; then
         PKG_MANAGER="dnf"
         $PKG_MANAGER update
-    elif [ "$OS" == "Arch" ]; then
+    elif [[ "$OS" == "Arch"* ]] || [[ "$OS" == "Arch Linux"* ]]; then
         PKG_MANAGER="pacman"
         $PKG_MANAGER -Sy
     elif [[ "$OS" == "openSUSE"* ]]; then
@@ -95,7 +95,7 @@ install_package () {
         $PKG_MANAGER install -y "$PACKAGE"
     elif [ "$OS" == "Fedora"* ]; then
         $PKG_MANAGER install -y "$PACKAGE"
-    elif [ "$OS" == "Arch" ]; then
+    elif [[ "$OS" == "Arch"* ]] || [[ "$OS" == "Arch Linux"* ]]; then
         $PKG_MANAGER -S --noconfirm "$PACKAGE"
     else
         colorized_echo red "Unsupported operating system"
