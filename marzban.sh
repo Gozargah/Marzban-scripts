@@ -553,7 +553,7 @@ backup_command() {
                 fi
                 ;;
             mysql)
-                if ! docker exec "$container_name" mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" --all-databases --ignore-database=mysql --ignore-database=performance_schema --ignore-database=information_schema --ignore-database=sys --events --triggers > "$temp_dir/db_backup.sql" 2>>"$log_file"; then
+                if ! docker exec "$container_name" mysqldump -u root -p"$MYSQL_ROOT_PASSWORD" marzban --events --triggers  > "$temp_dir/db_backup.sql" 2>>"$log_file"; then
                     error_messages+=("MySQL dump failed.")
                 fi
                 ;;
